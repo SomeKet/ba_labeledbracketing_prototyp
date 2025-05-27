@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+    <script type="text/javascript" src="https://cdn.tiny.cloud/1/e0q0w4t1ep5f35kyxt999mzlm4ro2px179u580taztflq9sf/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+</head>
+<body>
+    <h1>Bachelorprojekt - Prototype</h1>
+
+    <div id="lecturerView">
+        <h2>Lehrperson</h2>
+        <div id="tinymce-container">
+            <textarea id="lecTinyMCE"></textarea>
+            <button id="start">Aufgabe Starten</button>
+        </div>
+        <div id="category">
+            <form id="categoryForm" name="categoryForm">
+                <input type="text" id="name" placeholder="Bezeichnung" required>
+                <input type="text" id="label" placeholder="Label" required>
+                <input type="text" id="color" placeholder="Farbe" required>
+                <input type="text" id="extra" placeholder="Hinweis/Definition" required>
+                <button type="submit">Hinzufügen</button>
+            </form>
+            <div class="categoryButtons" id="lecButtons"></div>
+        </div>
+    </div>
+
+
+    <div id="studentView">
+        <h2>Student</h2>
+        <div id="container">
+            <div id="studentExercise">
+    
+            </div>
+            <div id="studButtons">
+        
+            </div>
+        </div>
+    </div>
+</body>
+</html>
