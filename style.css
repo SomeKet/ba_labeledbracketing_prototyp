@@ -1,6 +1,6 @@
 #tinymce-container{
     display:flex;
     flex-direction: column;
-    width: 50vw;
+    width: 900px;
     margin-bottom: 20px;
 }
