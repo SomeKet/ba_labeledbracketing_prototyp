@@ -15,6 +15,7 @@ tinymce.init({
 let categories = [];
 const labeledMarker = {label:"", color:""};
 let markingFlag = 0;
+let deleteMode = false;
 
     // Starte die Initialisierung nach DOM-Load
 document.addEventListener('DOMContentLoaded', function(){
@@ -28,6 +29,16 @@ document.addEventListener('DOMContentLoaded', function(){
     let btnlist = [btn1, btn2, btn3, btn4];
 
     btnlist.forEach(btn => createCategory(btn.name, btn.label, btn.color, btn.extra));
+
+    let deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "Markierung löschen";
+    deleteBtn.addEventListener('click', function() {
+        deleteMode = !deleteMode;
+        deleteBtn.textContent = deleteMode ? "Lösch-Modus beenden" : "Markierung löschen";
+        deleteBtn.style.background = deleteMode ? "darkred" : "red";
+        console.log(deleteMode);
+    })
+    document.getElementById("lecButtons").appendChild(deleteBtn);
 });
 
 document.getElementById('categoryForm').addEventListener('submit', (e) => {
