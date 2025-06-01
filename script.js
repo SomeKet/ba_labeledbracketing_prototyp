@@ -30,16 +30,15 @@ document.addEventListener('DOMContentLoaded', function(){
 
     btnlist.forEach(btn => createCategory(btn.name, btn.label, btn.color, btn.extra));
 
-    let deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "Markierung löschen";
-    deleteBtn.addEventListener('click', function() {
-        deleteMode = !deleteMode;
-        deleteBtn.textContent = deleteMode ? "Lösch-Modus beenden" : "Markierung löschen";
-        deleteBtn.style.background = deleteMode ? "darkred" : "red";
-        console.log(deleteMode);
-    })
-    document.getElementById("lecButtons").appendChild(deleteBtn);
 });
+
+function deleteModeTrigger(){
+        deleteMode = !deleteMode;
+        let deleteBtn = document.getElementById("deleteModeBtn");
+        deleteBtn.textContent = deleteMode ? "Lösch-Modus beenden" : "Markierung löschen";
+        deleteBtn.style.background = deleteMode ? "darkred" : "";
+        console.log(deleteMode);
+}
 
 document.getElementById('categoryForm').addEventListener('submit', (e) => {
     e.preventDefault(); //verhinder redirect
@@ -73,6 +72,9 @@ function createCategory(name, label, color, extra){
     btn.addEventListener('click', function (){
         labeledMarker.label = label;
         labeledMarker.color = color;
+        if(deleteMode){
+            deleteModeTrigger();
+        }
         console.log(labeledMarker);
     })
 }
@@ -110,6 +112,14 @@ function initializeHighlighter() {
             console.log("Highlighter initialisiert");
             
             const editorBody = editor.getBody();
+
+            editorBody.addEventListener("click", function(e) {
+                if(deleteMode && e.target.closest('span[data-label]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    removeHighlight(e.target.closest('span[data-label]'));
+                }
+            }, true);
             
             editorBody.addEventListener("mousedown", function () {
                 markingFlag = 0;
@@ -130,36 +140,59 @@ function initializeHighlighter() {
     }, 1000);
 }
 
-function highlightSelection(labeledMarker) {
+function highlightSelection(labeledMarker){
     const editor = tinymce.get("lecTinyMCE");
     const selection = editor.selection;
-    const selectedText = selection.getContent({ format: 'text' });
-    
+    const rng = selection.getRng();
 
-    if(selectedText === ""){
-        return;
-    }else if( selectedText === " "){
-        alert("Sollen 'Leerzeichen' einzeln markiert werden können?");
-        return;
+    wrapping(rng, labeledMarker.label, labeledMarker.color);
+}
+
+function wrapping(rng, label, color){
+    const text = rng.extractContents();
+
+    const wrapperSpan = document.createElement("span");
+    wrapperSpan.setAttribute("data-label", labeledMarker.label);
+    wrapperSpan.setAttribute("style", `color: ${color}`);
+
+    const wrapperSub = document.createElement("sub");
+    wrapperSub.setAttribute("style", `font-size: 14px;`);
+    const labelTextNode = document.createTextNode(label);
+    wrapperSub.appendChild(labelTextNode);
+
+
+    const openingBr = document.createTextNode("[");
+    const closingBr = document.createTextNode("]");
+
+    wrapperSpan.appendChild(openingBr)
+    wrapperSpan.appendChild(wrapperSub);
+    wrapperSpan.appendChild(text);
+    wrapperSpan.appendChild(closingBr);
+
+    rng.insertNode(wrapperSpan);
+}
+
+function removeHighlight(span) {
+    const editor = tinymce.get("lecTinyMCE");
+
+    let html = span.innerHTML;
+
+    // Das <sub> Tag und die eckigen Klammern entfernen, aber alle anderen Inhalte erhalten
+    html = html.replace(/^\[\s*<sub[^>]*>[^<]*<\/sub>/, ''); // nur am Anfang!
+    html = html.replace(/\]$/, ''); // nur die letzte schließende Klammer am Ende entfernen
+
+    // Neuen Container für das "entklammerte" HTML erstellen
+    const fragment = document.createElement("span");
+    fragment.innerHTML = html;
+
+    // Falls verschachtelte Spans drin sind, bleiben diese erhalten!
+    // Aber unnötigen Wrapper entfernen:
+    while (fragment.childNodes.length === 1 && fragment.firstChild.nodeType === Node.ELEMENT_NODE) {
+        fragment.replaceWith(fragment.firstChild);
     }
 
-    const selectedHTML = selection.getContent({ format: 'html' });
+    // Das ursprüngliche Markierungsspan ersetzen:
+    span.parentNode.replaceChild(fragment, span);
 
-    if(selectedHTML.includes('data-label') ||
-    selectedHTML.includes('<sub') ||
-    selectedHTML[0]===" " ||
-    selectedHTML[0]==="[" ||
-    selectedHTML[selectedHTML.length - 1]==="]" ||
-    selectedHTML[selectedHTML.length - 1]===" "){
-        alert("Markierung darf nicht mit Leerzeichen, Klammer, oder Label starten oder enden");
-        return;
-    }
-
-    console.log(selection.getNode().nodeName);
-    console.log("Selektierter Text:", selectedText);
-    
-    const highlightedHTML = `<span data-label="${labeledMarker.label}" style="color: ${labeledMarker.color};">[<sub style="font-size: 14px";>${labeledMarker.label}</sub> ${selectedText} ]</span>`;
-    //const highlightedHTML = `<span data-label="${labeledMarker.label}">[<sub style=" color: ${labeledMarker.color}; font-size: 14px";>${labeledMarker.label}</sub> ${selectedText} ]</span>`;
-    
-    selection.setContent(highlightedHTML);
+    editor.nodeChanged();
 }

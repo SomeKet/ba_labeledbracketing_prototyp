@@ -13,7 +13,7 @@
     <div id="lecturerView">
         <h2>Lehrperson</h2>
         <div id="tinymce-container">
-            <textarea id="lecTinyMCE">Max liebt Erika.</textarea>
+            <textarea id="lecTinyMCE">Mario liebt Anina.</textarea>
             <!-- <textarea id="lecTinyMCE"><p>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
             </p>
             <p>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</p></textarea> -->
@@ -23,12 +23,12 @@
             <form id="categoryForm" name="categoryForm">
                 <input type="text" id="name" placeholder="Bezeichnung" name="name" required>
                 <input type="text" id="label" placeholder="Label" name="label" required>
-                <input type="color" id="color" placeholder="Farbe" name="color" required>
+                <input type="color" id="color" value="#7fa4cc" name="color" required>
                 <input type="text" id="extra" placeholder="Hinweis/Definition" name="extra" required>
                 <button type="submit">Hinzufügen</button>
             </form>
             <div class="categoryButtons" id="lecButtons">
-
+                <button id="deleteModeBtn" onclick="deleteModeTrigger()">Markierung löschen</button>
 
             </div>
         </div>
