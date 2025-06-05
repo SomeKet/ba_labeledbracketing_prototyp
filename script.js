@@ -1,7 +1,7 @@
 tinymce.init({
     selector: '#lecTinyMCE',
     height: 400,
-    content_css: '/stylesheet.css',
+    content_css: '/style.css',
     //entity_encoding: 'raw', /* wenn aktiviert: NICHT anzeigen von &nbsp; */
     plugins: [
       // Core editing features
@@ -140,23 +140,56 @@ function initializeHighlighter() {
     }, 1000);
 }
 
+/*
+Bedingungen:
+- Prüfe ob Range einen Knoten hat.. wenn ja, speichern, und diese einen neuen Knoten als Parent zuweisen
+
+- Nur ganzes Wort ??? 
+- Nur Verschachtelung - Keine Überlappung
+- CHECK Kein Leerzeichen/Kein "" 
+- Keine doppelten Markierungen - If-Abfrage mit data-label prüfen
+- Erweiterung/Zusammenfassung: Hier müssen "childNodes" extrahiert und neu zugeordnet werden
+    - vollständig umschlossen (eine Markierung bekommt ein neuen Elternknoten)
+    - vollständig umhüllt (mehrere Markierungen werden umhüllt/zusammengefasst)
+        - Umsetzung: es müssen alle "Knoten" ausfinding gemacht werden
+        - alle Knoten müssen einer neuen Range zugeordet werden
+        - diese Range wird
+- keine Markierung von Block-Level (<p>, <div>, <h1>...) Elementen: köännte zu falschen Rendering führen
+    - traversal Durchlauf (DFS) - alle Elemente/Knoten prüfen (nodeType, tagName, ELEMENT_NODE)
+- bei doppel Markierung, Markierung entfernen ?! Wäre nicht schlecht
+    */
+
 function highlightSelection(labeledMarker){
     const editor = tinymce.get("lecTinyMCE");
     const selection = editor.selection;
-    const rng = selection.getRng();
+    const rng = selection.getRng(); //tinymce range objekt
+
+    if(rng.toString().trim() === ""){
+        return;
+    }
+
+    if(rng.toString() === "[" || rng.toString() === "]"){
+        return;
+    }
 
     wrapping(rng, labeledMarker.label, labeledMarker.color);
 }
+
 
 function wrapping(rng, label, color){
     const text = rng.extractContents();
 
     const wrapperSpan = document.createElement("span");
-    wrapperSpan.setAttribute("data-label", labeledMarker.label);
+    wrapperSpan.setAttribute("data-label", label);
     wrapperSpan.setAttribute("style", `color: ${color}`);
 
     const wrapperSub = document.createElement("sub");
+    wrapperSub.className = "unselectable";
+    wrapperSub.setAttribute("contenteditable", "false");
+    wrapperSub.setAttribute("draggable", "false");
     wrapperSub.setAttribute("style", `font-size: 14px;`);
+    makeUnselectable(wrapperSub);
+
     const labelTextNode = document.createTextNode(label);
     wrapperSub.appendChild(labelTextNode);
 
@@ -170,6 +203,17 @@ function wrapping(rng, label, color){
     wrapperSpan.appendChild(closingBr);
 
     rng.insertNode(wrapperSpan);
+}
+
+function makeUnselectable(el){
+    el.style.pointerEvents = 'none';
+    el.style.userSelect = 'none';
+
+    el.style.setProperty('-webkit-touch-callout', 'none');
+    el.style.setProperty('-webkit-user-select', 'none');
+    el.style.setProperty('-khtml-user-select', 'none');
+    el.style.setProperty('-moz-user-select', 'none');
+    el.style.setProperty('-ms-user-select', 'none');
 }
 
 function removeHighlight(span) {
