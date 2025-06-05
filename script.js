@@ -168,9 +168,19 @@ function highlightSelection(labeledMarker){
         return;
     }
 
-    if(rng.toString() === "[" || rng.toString() === "]"){
+    const countOpenBrac = rng.toString().match(/\[/g) || [];
+    const countClosedBrac = rng.toString().match(/\]/g) || [];
+
+    console.log(rng.toString());
+    console.log(countOpenBrac.length + countClosedBrac.length);
+
+    if(countOpenBrac.length === 1 ||
+        countClosedBrac === 1 ||
+        countOpenBrac.length != countClosedBrac.length){
+        console.log("ungerade Klammern - überlappend");
         return;
     }
+
 
     wrapping(rng, labeledMarker.label, labeledMarker.color);
 }
