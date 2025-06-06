@@ -203,7 +203,8 @@ function highlightSelection(labeledMarker){
         return;
     }
 
-    if(selection.getNode().nodeName != "P"){
+    console.log(selection.getNode().nodeName);
+    if(selection.getNode().nodeName !== "P" && selection.getNode().nodeName !== "SPAN"){
         alert("Block-Element");
         return;
     }
@@ -269,43 +270,24 @@ function makeUnselectable(el){
 function removeHighlight(span) {
     const editor = tinymce.get("lecTinyMCE");
 
-    if(!span.hasAttribute("data-label"))return;
-    // Prüfe, ob es das erwartete Markup hat
-    const children = span.childNodes;
+    if (!span.hasAttribute("data-label")) return;
 
-    // Erwartet: [ <sub>label</sub> text ]
-    if (
-        children.length >= 3 &&
-        children[0].nodeType === Node.TEXT_NODE &&
-        children[0].textContent.trim() === "[" &&
-        children[1].nodeName === "SUB" &&
-        children[2].nodeType === Node.TEXT_NODE // oder auch weitere Textstücke
-    ) {
-        // Entferne öffnende Klammer
-        span.removeChild(children[0]);
+    const fragment = document.createDocumentFragment();
 
-        // Entferne <sub>
-        span.removeChild(children[0]); // da der erste wurde schon entfernt
-
-        // Entferne schließende Klammer (letzter Node)
-        if (
-            span.lastChild &&
-            span.lastChild.nodeType === Node.TEXT_NODE &&
-            span.lastChild.textContent.trim().endsWith("]")
-        ) {
-            span.removeChild(span.lastChild);
+    span.childNodes.forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            // Entferne Klammern
+            let text = node.textContent;
+            text = text.replace("[", "").replace("]", "");
+            if (text.trim()) {
+                fragment.appendChild(document.createTextNode(text));
+            }
+        } else if (node.nodeName !== "SUB") {
+            // Behalte alles, was kein <sub> ist
+            fragment.appendChild(node.cloneNode(true));
         }
+    });
 
-        // Hole nur noch den reinen Text (alle anderen Node-Reste)
-        const fragment = document.createDocumentFragment();
-        while (span.firstChild) {
-            fragment.appendChild(span.firstChild);
-        }
-
-        // Setze das Original wieder ein
-        span.parentNode.replaceChild(fragment, span);
-        editor.nodeChanged();
-    } else {
-        console.warn("Die Markierung entspricht nicht dem erwarteten Format.");
-    }
+    span.parentNode.replaceChild(fragment, span);
+    editor.nodeChanged();
 }
