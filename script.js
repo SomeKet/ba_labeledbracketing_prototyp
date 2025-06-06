@@ -78,9 +78,7 @@ function createCategory(name, label, color, extra){
         deacBtn.forEach(btn => {
             btn.classList.remove('active');
             btn.style.opacity="100%";
-        }
-        
-    );
+        });
 
         if(!isActive){
             btn.classList.add('active');
@@ -197,14 +195,18 @@ function highlightSelection(labeledMarker){
     console.log(rng.toString());
     console.log(countOpenBrac.length + countClosedBrac.length);
 
-    if(countOpenBrac.length === 1 ||
-        countClosedBrac === 1 ||
-        countOpenBrac.length != countClosedBrac.length){
-        console.log("ungerade Anzahl an Klammern - überlappend");
-        return;
-    }
+    // normale markierung -> [0][0]
+    // Zusammenfassen -> [x][x]
+    // 1 markierung übermarkieren -> [1][1]
 
-    wrapping(rng, labeledMarker.label, labeledMarker.color);
+    if((countOpenBrac.length === 0 && countClosedBrac.length === 0) ||
+        (countOpenBrac.length === countClosedBrac.length)){
+            wrapping(rng, labeledMarker.label, labeledMarker.color);
+        }else{
+            console.log("überlappung");
+            return;
+        }
+
 }
 
 
