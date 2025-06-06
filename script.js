@@ -288,6 +288,10 @@ function removeHighlight(span) {
         }
     });
 
-    span.parentNode.replaceChild(fragment, span);
+    const parent = span.parentNode;
+    const next = span.nextSibling;
+    parent.removeChild(span);
+    parent.insertBefore(fragment, next);
+    parent.normalize();
     editor.nodeChanged();
 }
