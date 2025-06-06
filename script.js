@@ -34,10 +34,21 @@ document.addEventListener('DOMContentLoaded', function(){
 
 function deleteModeTrigger(){
         deleteMode = !deleteMode;
-        let deleteBtn = document.getElementById("deleteModeBtn");
+        const deleteBtn = document.getElementById("deleteModeBtn");
+
         deleteBtn.textContent = deleteMode ? "Lösch-Modus beenden" : "Markierung löschen";
         deleteBtn.style.background = deleteMode ? "darkred" : "";
-        console.log(deleteMode);
+
+        if(deleteMode){
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.opacity="100%";
+            });
+
+            labeledMarker.color = null;
+            labeledMarker.label = null;
+            tinymce.get('lecTinyMCE').contentDocument.body.style.caretColor = "";
+        }
 }
 
 document.getElementById('categoryForm').addEventListener('submit', (e) => {
@@ -75,30 +86,34 @@ function createCategory(name, label, color, extra){
         const deacBtn = document.querySelectorAll('.active');
         const isActive = btn.classList.contains('active');
 
+        labeledMarker.label = label;
+        labeledMarker.color = color;
+
         deacBtn.forEach(btn => {
             btn.classList.remove('active');
             btn.style.opacity="100%";
         });
 
-        if(!isActive){
-            btn.classList.add('active');
-            labeledMarker.label = label;
-            labeledMarker.color = color;
-            tinymce.get('lecTinyMCE').contentDocument.body.style.caretColor = labeledMarker.color;
-            btn.style.opacity="50%";
-        }else{
-            labeledMarker.color = null;
-            labeledMarker.label = null;
-            tinymce.get('lecTinyMCE').contentDocument.body.style.caretColor = "";
-            btn.style.opacity="100%";
-
-        }
-
         if(deleteMode){
             deleteModeTrigger();
         }
+        categoryTrigger(!isActive, btn);
         console.log(labeledMarker);
     })
+}
+
+function categoryTrigger(isActive, btn){
+    if(isActive){
+        btn.classList.add('active');
+        tinymce.get('lecTinyMCE').contentDocument.body.style.caretColor = labeledMarker.color;
+        btn.style.opacity="50%";
+    }else{
+        btn.classList.remove('active');
+        labeledMarker.color = null;
+        labeledMarker.label = null;
+        tinymce.get('lecTinyMCE').contentDocument.body.style.caretColor = "";
+        btn.style.opacity="100%";
+    }
 }
 
 function checkCategoryDuplette(name, label, color){
@@ -123,7 +138,6 @@ function checkCategoryDuplette(name, label, color){
     }
     return !exists;
 }
-
 
 function initializeHighlighter() {
         const checkEditor = setInterval(() => {
@@ -166,7 +180,7 @@ function initializeHighlighter() {
 Bedingungen:
 - Prüfe ob Range einen Knoten hat.. wenn ja, speichern, und diese einen neuen Knoten als Parent zuweisen
 
-- Nur ganzes Wort ??? 
+- NOPE Nur ganzes Wort ??? 
 - CHECK Nur Verschachtelung - Keine Überlappung
 - CHECK Kein Leerzeichen/Kein "" 
 - CHECK Erweiterung/Zusammenfassung: Hier müssen "childNodes" extrahiert und neu zugeordnet werden
@@ -175,9 +189,9 @@ Bedingungen:
         - Umsetzung: es müssen alle "Knoten" ausfinding gemacht werden
         - alle Knoten müssen einer neuen Range zugeordet werden
         - diese Range wird
-- keine Markierung von Block-Level (<p>, <div>, <h1>...) Elementen: köännte zu falschen Rendering führen
+- CHECK keine Markierung von Block-Level (<p>, <div>, <h1>...) Elementen: köännte zu falschen Rendering führen
     - traversal Durchlauf (DFS) - alle Elemente/Knoten prüfen (nodeType, tagName, ELEMENT_NODE)
-- bei doppel Markierung, Markierung entfernen ?! Wäre nicht schlecht
+- NOPE bei doppel Markierung, Markierung entfernen ?! Wäre nicht schlecht
     */
 
 function highlightSelection(labeledMarker){
@@ -189,11 +203,14 @@ function highlightSelection(labeledMarker){
         return;
     }
 
+    if(selection.getNode().nodeName != "P"){
+        alert("Block-Element");
+        return;
+    }
+    console.log(selection.getNode().nodeName);
+
     const countOpenBrac = rng.toString().match(/\[/g) || [];
     const countClosedBrac = rng.toString().match(/\]/g) || [];
-
-    console.log(rng.toString());
-    console.log(countOpenBrac.length + countClosedBrac.length);
 
     // normale markierung -> [0][0]
     // Zusammenfassen -> [x][x]
@@ -208,7 +225,6 @@ function highlightSelection(labeledMarker){
         }
 
 }
-
 
 function wrapping(rng, label, color){
     const text = rng.extractContents();
@@ -253,24 +269,43 @@ function makeUnselectable(el){
 function removeHighlight(span) {
     const editor = tinymce.get("lecTinyMCE");
 
-    let html = span.innerHTML;
+    if(!span.hasAttribute("data-label"))return;
+    // Prüfe, ob es das erwartete Markup hat
+    const children = span.childNodes;
 
-    // Das <sub> Tag und die eckigen Klammern entfernen, aber alle anderen Inhalte erhalten
-    html = html.replace(/^\[\s*<sub[^>]*>[^<]*<\/sub>/, ''); // nur am Anfang!
-    html = html.replace(/\]$/, ''); // nur die letzte schließende Klammer am Ende entfernen
+    // Erwartet: [ <sub>label</sub> text ]
+    if (
+        children.length >= 3 &&
+        children[0].nodeType === Node.TEXT_NODE &&
+        children[0].textContent.trim() === "[" &&
+        children[1].nodeName === "SUB" &&
+        children[2].nodeType === Node.TEXT_NODE // oder auch weitere Textstücke
+    ) {
+        // Entferne öffnende Klammer
+        span.removeChild(children[0]);
 
-    // Neuen Container für das "entklammerte" HTML erstellen
-    const fragment = document.createElement("span");
-    fragment.innerHTML = html;
+        // Entferne <sub>
+        span.removeChild(children[0]); // da der erste wurde schon entfernt
 
-    // Falls verschachtelte Spans drin sind, bleiben diese erhalten!
-    // Aber unnötigen Wrapper entfernen:
-    while (fragment.childNodes.length === 1 && fragment.firstChild.nodeType === Node.ELEMENT_NODE) {
-        fragment.replaceWith(fragment.firstChild);
+        // Entferne schließende Klammer (letzter Node)
+        if (
+            span.lastChild &&
+            span.lastChild.nodeType === Node.TEXT_NODE &&
+            span.lastChild.textContent.trim().endsWith("]")
+        ) {
+            span.removeChild(span.lastChild);
+        }
+
+        // Hole nur noch den reinen Text (alle anderen Node-Reste)
+        const fragment = document.createDocumentFragment();
+        while (span.firstChild) {
+            fragment.appendChild(span.firstChild);
+        }
+
+        // Setze das Original wieder ein
+        span.parentNode.replaceChild(fragment, span);
+        editor.nodeChanged();
+    } else {
+        console.warn("Die Markierung entspricht nicht dem erwarteten Format.");
     }
-
-    // Das ursprüngliche Markierungsspan ersetzen:
-    span.parentNode.replaceChild(fragment, span);
-
-    editor.nodeChanged();
 }
