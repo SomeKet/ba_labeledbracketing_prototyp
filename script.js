@@ -63,15 +63,39 @@ function createCategory(name, label, color, extra){
     categories.push({name, label, color, extra});
 
     let btn = document.createElement("button");
-    btn.className=`${label}`;
+    btn.className=`category-btn`;
     let textNode = document.createTextNode(name);
     btn.appendChild(textNode);
     btn.style.background = color;
+    btn.style.marginRight= "5px";
+
     document.getElementById("lecButtons").appendChild(btn);
 
     btn.addEventListener('click', function (){
-        labeledMarker.label = label;
-        labeledMarker.color = color;
+        const deacBtn = document.querySelectorAll('.active');
+        const isActive = btn.classList.contains('active');
+
+        deacBtn.forEach(btn => {
+            btn.classList.remove('active');
+            btn.style.opacity="100%";
+        }
+        
+    );
+
+        if(!isActive){
+            btn.classList.add('active');
+            labeledMarker.label = label;
+            labeledMarker.color = color;
+            tinymce.get('lecTinyMCE').contentDocument.body.style.caretColor = labeledMarker.color;
+            btn.style.opacity="50%";
+        }else{
+            labeledMarker.color = null;
+            labeledMarker.label = null;
+            tinymce.get('lecTinyMCE').contentDocument.body.style.caretColor = "";
+            btn.style.opacity="100%";
+
+        }
+
         if(deleteMode){
             deleteModeTrigger();
         }
@@ -145,10 +169,9 @@ Bedingungen:
 - Prüfe ob Range einen Knoten hat.. wenn ja, speichern, und diese einen neuen Knoten als Parent zuweisen
 
 - Nur ganzes Wort ??? 
-- Nur Verschachtelung - Keine Überlappung
+- CHECK Nur Verschachtelung - Keine Überlappung
 - CHECK Kein Leerzeichen/Kein "" 
-- Keine doppelten Markierungen - If-Abfrage mit data-label prüfen
-- Erweiterung/Zusammenfassung: Hier müssen "childNodes" extrahiert und neu zugeordnet werden
+- CHECK Erweiterung/Zusammenfassung: Hier müssen "childNodes" extrahiert und neu zugeordnet werden
     - vollständig umschlossen (eine Markierung bekommt ein neuen Elternknoten)
     - vollständig umhüllt (mehrere Markierungen werden umhüllt/zusammengefasst)
         - Umsetzung: es müssen alle "Knoten" ausfinding gemacht werden
@@ -177,10 +200,9 @@ function highlightSelection(labeledMarker){
     if(countOpenBrac.length === 1 ||
         countClosedBrac === 1 ||
         countOpenBrac.length != countClosedBrac.length){
-        console.log("ungerade Klammern - überlappend");
+        console.log("ungerade Anzahl an Klammern - überlappend");
         return;
     }
-
 
     wrapping(rng, labeledMarker.label, labeledMarker.color);
 }
