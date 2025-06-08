@@ -32,6 +32,20 @@ document.addEventListener('DOMContentLoaded', function(){
 
 });
 
+
+document.getElementById("solution").addEventListener('click', (e)=>{
+    e.preventDefault();
+
+    const editor = tinymce.get("lecTinyMCE");
+    extractSolution(editor.getBody(), 0);
+    categories.forEach(c => {
+        console.log(`Kategorie: ${c.label}`, c.solution);
+    });
+
+    prepStudButtons();
+    
+})
+
 function deleteModeTrigger(){
         deleteMode = !deleteMode;
         const deleteBtn = document.getElementById("deleteModeBtn");
@@ -308,15 +322,6 @@ function removeHighlight(span) {
     editor.nodeChanged();
 }
 
-document.getElementById("solution").addEventListener('click', (e)=>{
-    e.preventDefault();
-
-    const editor = tinymce.get("lecTinyMCE");
-    extractSolution(editor.getBody(), 0);
-    categories.forEach(c => {
-        console.log(`Kategorie: ${c.label}`, c.solution);
-    });
-})
 
 function extractSolution(root, user){
     traverseTree(root, user);
@@ -377,4 +382,38 @@ function isSelectionBetweenBracketAndSub() {
     }
 
     return false;
+}
+
+function prepStudButtons(){
+    const bar = document.getElementById("studButtons");
+
+    categories.forEach(category => {
+        let btn = document.createElement("button");
+        btn.className = "category-btn";
+        btn.style.background = category.color;
+        let text = document.createTextNode(category.name);
+        btn.style.marginRight= "5px";
+        btn.appendChild(text);
+        bar.appendChild(btn);
+
+        btn.addEventListener('click', function (){
+        const deacBtn = document.querySelectorAll('.active');
+        const isActive = btn.classList.contains('active');
+
+        labeledMarker.label = label;
+        labeledMarker.color = color;
+
+        deacBtn.forEach(btn => {
+            btn.classList.remove('active');
+            btn.style.opacity="100%";
+        });
+
+        if(deleteMode){
+            deleteModeTrigger();
+        }
+        categoryTrigger(!isActive, btn);
+        console.log(labeledMarker);
+        })
+    })
+
 }
