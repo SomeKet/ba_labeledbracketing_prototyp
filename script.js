@@ -71,7 +71,7 @@ document.getElementById('categoryForm').addEventListener('submit', (e) => {
 })
 
 function createCategory(name, label, color, extra){
-    categories.push({name, label, color, extra,solution:[]});
+    categories.push({name, label, color, extra,solutionLec:[], solutionStud:[]});
 
     let btn = document.createElement("button");
     btn.className=`category-btn`;
@@ -165,10 +165,18 @@ function initializeHighlighter() {
                 markingFlag = 1;
             }, false);
             
+            let highlightLock = false;
             editorBody.addEventListener("mouseup", function () {
                 if(markingFlag === 1 && labeledMarker.label && labeledMarker.color) {
+                    if(highlightLock) return;
+
+                    highlightLock = true;
+
                     setTimeout(() => {
                         highlightSelection(labeledMarker);
+                        setTimeout(()=> {
+                            highlightLock = false;
+                        }, 200);
                     }, 10); // Kurze Verzögerung für saubere Selektion
                 }
             }, false);
@@ -304,36 +312,35 @@ document.getElementById("solution").addEventListener('click', (e)=>{
     e.preventDefault();
 
     const editor = tinymce.get("lecTinyMCE");
-    extractSolution(editor.getBody());
+    extractSolution(editor.getBody(), 0);
     categories.forEach(c => {
         console.log(`Kategorie: ${c.label}`, c.solution);
     });
 })
 
-function extractSolution(root){
-    traverseTree(root);
+function extractSolution(root, user){
+    traverseTree(root, user);
 }
 
-function traverseTree(element){
+function traverseTree(element, user){
     if(element.nodeType !== Node.ELEMENT_NODE)return;
 
     if(element.nodeName === "SPAN" && element.dataset.label){
         const label = element.dataset.label;
         const text = extractTextContent(element);
 
-        categories.filter(category => category.label === label)
-        .forEach(category => category.solution.push(text));
-    }
-    element.childNodes.forEach(traverseTree);
-}
+        if(!text || text.trim() === "")return;
 
-function extractTextContent1(span){
-    return Array.from(span.childNodes)
-    .filter(node => !(node.tagName === "SUB"))
-    .map(node => { var text = node.nodeValue;
-        text.replace(/^\[|\]$/g, "")})
-    .join("")
-    .trim();
+        if(user == 0){
+            categories.filter(category => category.label === label)
+            .forEach(category => category.solutionLec.push(text));
+        }else{
+            categories.filter(category => category.label === label)
+            .forEach(category => category.solutionStud.push(text));
+        }
+        
+    }
+    element.childNodes.forEach(child => traverseTree(child,user));
 }
 
 function extractTextContent(span) {
