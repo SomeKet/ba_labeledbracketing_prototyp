@@ -71,7 +71,7 @@ document.getElementById('categoryForm').addEventListener('submit', (e) => {
 })
 
 function createCategory(name, label, color, extra){
-    categories.push({name, label, color, extra});
+    categories.push({name, label, color, extra,solution:[]});
 
     let btn = document.createElement("button");
     btn.className=`category-btn`;
@@ -166,7 +166,7 @@ function initializeHighlighter() {
             }, false);
             
             editorBody.addEventListener("mouseup", function () {
-                if (markingFlag === 1 && labeledMarker.label && labeledMarker.color) {
+                if(markingFlag === 1 && labeledMarker.label && labeledMarker.color) {
                     setTimeout(() => {
                         highlightSelection(labeledMarker);
                     }, 10); // Kurze Verzögerung für saubere Selektion
@@ -208,7 +208,11 @@ function highlightSelection(labeledMarker){
         alert("Block-Element");
         return;
     }
-    console.log(selection.getNode().nodeName);
+
+    if(isSelectionBetweenBracketAndSub()){
+        return;
+    }
+    
 
     const countOpenBrac = rng.toString().match(/\[/g) || [];
     const countClosedBrac = rng.toString().match(/\]/g) || [];
@@ -270,19 +274,19 @@ function makeUnselectable(el){
 function removeHighlight(span) {
     const editor = tinymce.get("lecTinyMCE");
 
-    if (!span.hasAttribute("data-label")) return;
+    if(!span.hasAttribute("data-label")) return;
 
     const fragment = document.createDocumentFragment();
 
     span.childNodes.forEach(node => {
-        if (node.nodeType === Node.TEXT_NODE) {
+        if(node.nodeType === Node.TEXT_NODE) {
             // Entferne Klammern
             let text = node.textContent;
             text = text.replace("[", "").replace("]", "");
             if (text.trim()) {
                 fragment.appendChild(document.createTextNode(text));
             }
-        } else if (node.nodeName !== "SUB") {
+        }else if (node.nodeName !== "SUB") {
             // Behalte alles, was kein <sub> ist
             fragment.appendChild(node.cloneNode(true));
         }
@@ -294,4 +298,76 @@ function removeHighlight(span) {
     parent.insertBefore(fragment, next);
     parent.normalize();
     editor.nodeChanged();
+}
+
+document.getElementById("solution").addEventListener('click', (e)=>{
+    e.preventDefault();
+
+    const editor = tinymce.get("lecTinyMCE");
+    extractSolution(editor.getBody());
+    categories.forEach(c => {
+        console.log(`Kategorie: ${c.label}`, c.solution);
+    });
+})
+
+function extractSolution(root){
+    traverseTree(root);
+}
+
+function traverseTree(element){
+    if(element.nodeType !== Node.ELEMENT_NODE)return;
+
+    if(element.nodeName === "SPAN" && element.dataset.label){
+        const label = element.dataset.label;
+        const text = extractTextContent(element);
+
+        categories.filter(category => category.label === label)
+        .forEach(category => category.solution.push(text));
+    }
+    element.childNodes.forEach(traverseTree);
+}
+
+function extractTextContent1(span){
+    return Array.from(span.childNodes)
+    .filter(node => !(node.tagName === "SUB"))
+    .map(node => { var text = node.nodeValue;
+        text.replace(/^\[|\]$/g, "")})
+    .join("")
+    .trim();
+}
+
+function extractTextContent(span) {
+    let result = "";
+
+    span.childNodes.forEach(node => {
+        if(node.nodeType === Node.ELEMENT_NODE && node.tagName === "SUB") return;
+        if(node.nodeType === Node.TEXT_NODE) {
+            result += node.nodeValue;
+        }else if(node.nodeType === Node.ELEMENT_NODE) {
+            result += extractTextContent(node);
+        }
+    });
+
+    return result.replace(/^\[|\]$/g, "").trim();
+}
+
+function isSelectionBetweenBracketAndSub() {
+    const rng = tinymce.activeEditor.selection.getRng();
+    const container = rng.startContainer;
+    const offset = rng.startOffset;
+
+    // Fall 1: Wir sind in einem TextNode wie "[" direkt vor <sub>
+    if(container.nodeType === Node.TEXT_NODE) {
+        const text = container.nodeValue;
+
+        // Prüfung: Cursor ganz am Ende des Texts, und Text ist nur "["
+        if(text === "[" && offset === 1) {
+            const next = container.nextSibling;
+            if(next && next.nodeName === "SUB") {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
