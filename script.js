@@ -43,6 +43,7 @@ document.getElementById("solution").addEventListener('click', (e)=>{
     });
 
     prepStudButtons();
+    prepStudExercise();
     
 })
 
@@ -415,5 +416,39 @@ function prepStudButtons(){
         console.log(labeledMarker);
         })
     })
-
 }
+
+function prepStudExercise(){
+    let exerciseText = collectCleanText(tinymce.get("lecTinyMCE").getBody());
+    let container = document.createElement("div");
+    let textNode = document.createTextNode(exerciseText);
+    let exercsise = document.getElementById('studentExercise');
+    container.style.width = "400px";
+    container.style.height= "auto";
+    container.style.marginBottom = "20px";
+
+    container.appendChild(textNode);
+    exercsise.appendChild(container);
+}
+
+function collectCleanText(element) {
+    let result = "";
+
+    element.childNodes.forEach(node => {
+        if(node.nodeType === Node.TEXT_NODE) {
+            // Entferne eckige Klammern direkt hier
+            result += node.nodeValue.replace(/\[|\]/g, "");
+        }else if(node.nodeType === Node.ELEMENT_NODE) {
+            if(node.tagName === "SUB") {
+                // SUB-Elemente komplett ignorieren
+                return;
+            }else{
+                // Rekursiv weiter durchlaufen
+                result += collectCleanText(node);
+            }
+        }
+    });
+
+    return result;
+}
+
