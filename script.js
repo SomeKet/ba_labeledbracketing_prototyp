@@ -49,6 +49,7 @@ document.getElementById("solution").addEventListener('click', (e)=>{
     document.getElementById('studentView').hidden = false;
     prepStudButtons();
     prepStudExercise();
+    initializeHighlighter();
     
 })
 
@@ -259,6 +260,10 @@ function highlightSelection(labeledMarker){
 
 }
 
+function wrappingStudent(rng, label, color){
+
+}
+
 function wrapping(rng, label, color){
     const text = rng.extractContents();
 
@@ -425,15 +430,15 @@ function prepStudButtons(){
 
 function prepStudExercise(){
     let exerciseText = collectCleanText(tinymce.get("lecTinyMCE").getBody());
-    let container = document.createElement("div");
-    let textNode = document.createTextNode(exerciseText);
+    let p = document.createElement('p');
+    p.innerHTML = exerciseText;
+
     let exercsise = document.getElementById('studentExercise');
     container.style.width = "400px";
     container.style.height= "auto";
     container.style.marginBottom = "20px";
 
-    container.appendChild(textNode);
-    exercsise.appendChild(container);
+    exercsise.appendChild(p);
 }
 
 function collectCleanText(element) {
