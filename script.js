@@ -161,15 +161,29 @@ function checkCategoryDuplette(name, label, color){
 }
 
 function initializeHighlighter() {
-        const checkEditor = setInterval(() => {
-        const editor = tinymce.get("lecTinyMCE");
+    initHighlightView()
+}
+
+function viewFocus(){
+    if(user === 0){
+        return tinymce.get('lecTinyMCE');
+    }else{
+        return document.getElementById('studentExercise');
+    }
+}
+
+
+function initHighlightView(){
+    const checkEditor = setInterval(() => {
+        const editor = viewFocus();
         
-        if(editor && editor.getBody()) {
+        let editorBody = null;
+        user === 0 ? editorBody = editor.getBody() : editorBody = editor; 
+
+        if(editor && editorBody) {
             clearInterval(checkEditor);
             console.log("Highlighter initialisiert");
-            
-            const editorBody = editor.getBody();
-
+        
             editorBody.addEventListener("click", function(e) {
                 if(deleteMode && e.target.closest('span[data-label]')) {
                     e.preventDefault();
@@ -194,7 +208,7 @@ function initializeHighlighter() {
                     highlightLock = true;
 
                     setTimeout(() => {
-                        highlightSelection(labeledMarker);
+                        user === 0 ? highlightSelection(labeledMarker) : highlightSelectionStudent();
                         setTimeout(()=> {
                             highlightLock = false;
                         }, 200);
@@ -260,8 +274,66 @@ function highlightSelection(labeledMarker){
 
 }
 
-function wrappingStudent(rng, label, color){
+function highlightSelectionStudent(){
+    const container = document.getElementById('studentExercise');
+    const selection = window.getSelection();
+    const rng = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
 
+    if(!container.contains(selection.anchorNode)){
+        console.log("anchor fail");
+        return;
+    }
+
+    if(!rng || rng.toString().trim() === ""){
+        console.log("leerbereich");
+        return;
+    }
+
+        const countOpenBrac = rng.toString().match(/\[/g) || [];
+    const countClosedBrac = rng.toString().match(/\]/g) || [];
+
+    if((countOpenBrac.length === 0 && countClosedBrac.length === 0) ||
+        (countOpenBrac.length === countClosedBrac.length)){
+            wrappingStudent(rng);
+        }else{
+            console.log("überlappung");
+            return;
+    }
+    
+}
+
+function wrappingStudent(rng){
+    const selectedText = rng.toString();
+
+    if(!selectedText.trim() === "")return;
+
+    const wrapperText = document.createTextNode(selectedText);
+
+    const wrapperSpan = document.createElement("span");
+    wrapperSpan.style.color = labeledMarker.color;
+    wrapperSpan.setAttribute("data-label", labeledMarker.label);
+
+    const wrapperSub = document.createElement("sub");
+    wrapperSub.className="unselectable";
+    wrapperSub.setAttribute("contenteditable", "false");
+    wrapperSub.setAttribute("draggable", "false");
+    wrapperSub.setAttribute("style", `font-size: 14px;`);
+    makeUnselectable(wrapperSub);
+
+    const labelText = document.createTextNode(labeledMarker.label);
+    wrapperSub.appendChild(labelText);
+
+    const openingBr = document.createTextNode("[");
+    const closingBr = document.createTextNode("]");
+
+    rng.deleteContents();
+    wrapperSpan.appendChild(openingBr);
+    wrapperSpan.appendChild(wrapperSub);
+    wrapperSpan.appendChild(wrapperText);
+    wrapperSpan.appendChild(closingBr);
+
+    rng.insertNode(wrapperSpan);
+    
 }
 
 function wrapping(rng, label, color){
