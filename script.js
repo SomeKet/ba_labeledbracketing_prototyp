@@ -294,7 +294,7 @@ function highlightSelectionStudent(){
 
     if((countOpenBrac.length === 0 && countClosedBrac.length === 0) ||
         (countOpenBrac.length === countClosedBrac.length)){
-            wrappingStudent(rng);
+            wrapping(rng);
         }else{
             console.log("überlappung");
             return;
@@ -303,12 +303,7 @@ function highlightSelectionStudent(){
 }
 
 function wrappingStudent(rng){
-    const selectedText = rng.toString();
-
-    if(!selectedText.trim() === "")return;
-
-    const wrapperText = document.createTextNode(selectedText);
-
+    const selectedText = rng.extractContents();
     const wrapperSpan = document.createElement("span");
     wrapperSpan.style.color = labeledMarker.color;
     wrapperSpan.setAttribute("data-label", labeledMarker.label);
@@ -326,22 +321,21 @@ function wrappingStudent(rng){
     const openingBr = document.createTextNode("[");
     const closingBr = document.createTextNode("]");
 
-    rng.deleteContents();
     wrapperSpan.appendChild(openingBr);
     wrapperSpan.appendChild(wrapperSub);
-    wrapperSpan.appendChild(wrapperText);
+    wrapperSpan.appendChild(selectedText);
     wrapperSpan.appendChild(closingBr);
 
     rng.insertNode(wrapperSpan);
     
 }
 
-function wrapping(rng, label, color){
+function wrapping(rng){
     const text = rng.extractContents();
 
     const wrapperSpan = document.createElement("span");
-    wrapperSpan.setAttribute("data-label", label);
-    wrapperSpan.setAttribute("style", `color: ${color}`);
+    wrapperSpan.setAttribute("data-label", labeledMarker.label);
+    wrapperSpan.setAttribute("style", `color: ${labeledMarker.color}`);
 
     const wrapperSub = document.createElement("sub");
     wrapperSub.className = "unselectable";
@@ -350,7 +344,7 @@ function wrapping(rng, label, color){
     wrapperSub.setAttribute("style", `font-size: 14px;`);
     makeUnselectable(wrapperSub);
 
-    const labelTextNode = document.createTextNode(label);
+    const labelTextNode = document.createTextNode(labeledMarker.label);
     wrapperSub.appendChild(labelTextNode);
 
 
