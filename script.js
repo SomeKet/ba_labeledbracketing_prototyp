@@ -16,6 +16,8 @@ let categories = [];
 const labeledMarker = {label:"", color:""};
 let markingFlag = 0;
 let deleteMode = false;
+let user = 0;
+
 
     // Starte die Initialisierung nach DOM-Load
 document.addEventListener('DOMContentLoaded', function(){
@@ -41,7 +43,10 @@ document.getElementById("solution").addEventListener('click', (e)=>{
     categories.forEach(c => {
         console.log(`Kategorie: ${c.label}`, c.solution);
     });
-
+    
+    user = 1;
+    document.getElementById('lecturerView').hidden = true;
+    document.getElementById('studentView').hidden = false;
     prepStudButtons();
     prepStudExercise();
     
