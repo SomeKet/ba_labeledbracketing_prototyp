@@ -411,8 +411,8 @@ function prepStudButtons(){
         const deacBtn = document.querySelectorAll('.active');
         const isActive = btn.classList.contains('active');
 
-        labeledMarker.label = label;
-        labeledMarker.color = color;
+        labeledMarker.label = category.label;
+        labeledMarker.color = category.color;
 
         deacBtn.forEach(btn => {
             btn.classList.remove('active');
