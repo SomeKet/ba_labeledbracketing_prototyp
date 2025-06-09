@@ -253,6 +253,8 @@ function highlightSelection(labeledMarker){
     }
 
     if(isSelectionBetweenBracketAndSub()){
+        console.log("bracket sub")
+
         return;
     }
     
@@ -289,7 +291,12 @@ function highlightSelectionStudent(){
         return;
     }
 
-        const countOpenBrac = rng.toString().match(/\[/g) || [];
+    if(isSelectionBetweenBracketAndSub()){
+        console.log("bracket sub")
+        return;
+    }
+
+    const countOpenBrac = rng.toString().match(/\[/g) || [];
     const countClosedBrac = rng.toString().match(/\]/g) || [];
 
     if((countOpenBrac.length === 0 && countClosedBrac.length === 0) ||
@@ -299,34 +306,6 @@ function highlightSelectionStudent(){
             console.log("überlappung");
             return;
     }
-    
-}
-
-function wrappingStudent(rng){
-    const selectedText = rng.extractContents();
-    const wrapperSpan = document.createElement("span");
-    wrapperSpan.style.color = labeledMarker.color;
-    wrapperSpan.setAttribute("data-label", labeledMarker.label);
-
-    const wrapperSub = document.createElement("sub");
-    wrapperSub.className="unselectable";
-    wrapperSub.setAttribute("contenteditable", "false");
-    wrapperSub.setAttribute("draggable", "false");
-    wrapperSub.setAttribute("style", `font-size: 14px;`);
-    makeUnselectable(wrapperSub);
-
-    const labelText = document.createTextNode(labeledMarker.label);
-    wrapperSub.appendChild(labelText);
-
-    const openingBr = document.createTextNode("[");
-    const closingBr = document.createTextNode("]");
-
-    wrapperSpan.appendChild(openingBr);
-    wrapperSpan.appendChild(wrapperSub);
-    wrapperSpan.appendChild(selectedText);
-    wrapperSpan.appendChild(closingBr);
-
-    rng.insertNode(wrapperSpan);
     
 }
 
@@ -441,23 +420,35 @@ function extractTextContent(span) {
 }
 
 function isSelectionBetweenBracketAndSub() {
-    const rng = tinymce.activeEditor.selection.getRng();
-    const container = rng.startContainer;
-    const offset = rng.startOffset;
+    let rng = null;
+    
+    if (user === 0) {
+        rng = tinymce.activeEditor.selection.getRng();
+    } else {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return false;
+        rng = sel.getRangeAt(0);
+    }
+
+    let container = rng.startContainer;
+    let offset = rng.startOffset;
+
+    console.log("StartContainer:", container);
+    console.log("Offset:", offset);
+    console.log("Text:", container.nodeValue);
 
     // Fall 1: Wir sind in einem TextNode wie "[" direkt vor <sub>
     if(container.nodeType === Node.TEXT_NODE) {
         const text = container.nodeValue;
 
         // Prüfung: Cursor ganz am Ende des Texts, und Text ist nur "["
-        if(text === "[" && offset === 1) {
+         if (offset > 0 && text[offset - 1] === "[") {
             const next = container.nextSibling;
-            if(next && next.nodeName === "SUB") {
+            if (next && next.nodeName === "SUB") {
                 return true;
             }
         }
     }
-
     return false;
 }
 
@@ -507,24 +498,33 @@ function prepStudExercise(){
     exercsise.appendChild(p);
 }
 
-function collectCleanText(element) {
+function collectCleanText(element){
     let result = "";
-
+    
     element.childNodes.forEach(node => {
-        if(node.nodeType === Node.TEXT_NODE) {
-            // Entferne eckige Klammern direkt hier
+        if(node.nodeType === Node.TEXT_NODE){
             result += node.nodeValue.replace(/\[|\]/g, "");
-        }else if(node.nodeType === Node.ELEMENT_NODE) {
+        }else if(node.nodeType === Node.ELEMENT_NODE){
             if(node.tagName === "SUB") {
-                // SUB-Elemente komplett ignorieren
                 return;
-            }else{
-                // Rekursiv weiter durchlaufen
+
+            }else if(node.tagName === "SPAN" && node.hasAttribute("data-label")){
                 result += collectCleanText(node);
+
+            }else{
+                result += `<${node.tagName.toLowerCase()}`;
+                
+                if(node.attributes.length > 0){
+                    for(let attr of node.attributes){
+                        result += ` ${attr.name}="${attr.value}"`;
+                    }
+                }
+                result += ">";
+                result += collectCleanText(node);
+                result += `</${node.tagName.toLowerCase()}>`;
             }
         }
     });
-
+    
     return result;
 }
-
