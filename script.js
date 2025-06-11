@@ -530,7 +530,6 @@ function collectCleanText(element){
                 }
                 result += ">";
                 result += collectCleanText(node);
-                result += `</${node.tagName.toLowerCase()}>`;
             }
         }
     });
