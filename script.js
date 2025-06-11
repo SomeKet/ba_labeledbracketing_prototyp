@@ -258,9 +258,6 @@ function highlightSelection(){
         rng = selection.getRangeAt(0);
     }
     
-
- //tinymce range objekt
-
     if(rng.toString().trim() === ""){
         console.log("leerbereich");
         return;
@@ -270,19 +267,35 @@ function highlightSelection(){
         console.log("bracket sub")
         return;
     }
-    
 
-    const countOpenBrac = rng.toString().match(/\[/g) || [];
-    const countClosedBrac = rng.toString().match(/\]/g) || [];
+    if(bracketCounter(rng.toString())){
+        wrapping(rng);
+    }else{
+        console.log("überlappunt")
+        return;
+    }
+}
 
-    if((countOpenBrac.length === 0 && countClosedBrac.length === 0) ||
-        (countOpenBrac.length === countClosedBrac.length)){
-            wrapping(rng);
-        }else{
-            console.log("überlappung");
-            return;
-        }
+/*
+negativ = überlappung
+positiv = überlappung
+0 = korrekt
+*/
+function bracketCounter(str){
+  let depth = 0;
 
+  for(const ch of str){
+    if(ch === '[') {
+      depth++;             
+    }else if(ch === ']'){
+      depth--;             
+
+      if(depth < 0){ 
+        return false;
+      }
+    }
+  }
+  return depth === 0;
 }
 
 function highlightSelectionStudent(){
