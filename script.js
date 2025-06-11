@@ -53,12 +53,27 @@ document.getElementById("solution").addEventListener('click', (e)=>{
     
 })
 
+document.getElementById("studEingabe").addEventListener('click', (e)=>{
+    e.preventDefault();
+
+    const body = document.getElementById('studentExercise');
+    extractSolution(body, 1);
+})
+
+
 function deleteModeTrigger(){
         deleteMode = !deleteMode;
-        const deleteBtn = document.getElementById("deleteModeBtn");
+        if(user === 0){
+            const deleteBtn = document.getElementById("deleteModeBtn");
 
-        deleteBtn.textContent = deleteMode ? "Lösch-Modus beenden" : "Markierung löschen";
-        deleteBtn.style.background = deleteMode ? "darkred" : "";
+            deleteBtn.textContent = deleteMode ? "Lösch-Modus beenden" : "Markierung löschen";
+            deleteBtn.style.background = deleteMode ? "darkred" : "";
+        }else{
+            const deleteBtn = document.getElementById("deleteModeBtnStud");
+            deleteBtn.textContent = deleteMode ? "Lösch-Modus beenden" : "Markierung löschen";
+            deleteBtn.style.background = deleteMode ? "darkred" : "";
+        }
+        
 
         if(deleteMode){
             document.querySelectorAll('.category-btn').forEach(btn => {
@@ -298,38 +313,6 @@ function bracketCounter(str){
   return depth === 0;
 }
 
-function highlightSelectionStudent(){
-    const container = document.getElementById('studentExercise');
-    const selection = window.getSelection();
-    const rng = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-
-    if(!container.contains(selection.anchorNode)){
-        console.log("anchor fail");
-        return;
-    }
-
-    if(!rng || rng.toString().trim() === ""){
-        console.log("leerbereich");
-        return;
-    }
-
-    if(isSelectionBetweenBracketAndSub()){
-        console.log("bracket sub")
-        return;
-    }
-
-    const countOpenBrac = rng.toString().match(/\[/g) || [];
-    const countClosedBrac = rng.toString().match(/\]/g) || [];
-
-    if((countOpenBrac.length === 0 && countClosedBrac.length === 0) ||
-        (countOpenBrac.length === countClosedBrac.length)){
-            wrapping(rng);
-        }else{
-            console.log("überlappung");
-            return;
-    }
-    
-}
 
 function wrapping(rng){
     const text = rng.extractContents();
@@ -410,14 +393,16 @@ function traverseTree(element, user){
 
     if(element.nodeName === "SPAN" && element.dataset.label){
         const label = element.dataset.label;
-        const text = extractTextContent(element);
+        const text = extractLabeledText(element);
 
         if(!text || text.trim() === "")return;
 
         if(user == 0){
+            console.log("lec Eingaben")
             categories.filter(category => category.label === label)
             .forEach(category => category.solutionLec.push(text));
         }else{
+            console.log("stud Eigaben");
             categories.filter(category => category.label === label)
             .forEach(category => category.solutionStud.push(text));
         }
@@ -426,7 +411,7 @@ function traverseTree(element, user){
     element.childNodes.forEach(child => traverseTree(child,user));
 }
 
-function extractTextContent(span) {
+function extractLabeledText(span) {
     let result = "";
 
     span.childNodes.forEach(node => {
@@ -434,7 +419,7 @@ function extractTextContent(span) {
         if(node.nodeType === Node.TEXT_NODE) {
             result += node.nodeValue;
         }else if(node.nodeType === Node.ELEMENT_NODE) {
-            result += extractTextContent(node);
+            result += extractLabeledText(node);
         }
     });
 
@@ -509,15 +494,8 @@ function prepStudButtons(){
 
 function prepStudExercise(){
     let exerciseText = collectCleanText(tinymce.get("lecTinyMCE").getBody());
-    let p = document.createElement('p');
-    p.innerHTML = exerciseText;
-
     let exercsise = document.getElementById('studentExercise');
-    container.style.width = "400px";
-    container.style.height= "auto";
-    container.style.marginBottom = "20px";
-
-    exercsise.appendChild(p);
+    exercsise.innerHTML = exerciseText;
 }
 
 function collectCleanText(element){
@@ -557,3 +535,6 @@ function collectCleanText(element){
     
     return result;
 }
+
+
+
