@@ -522,6 +522,7 @@ function prepStudExercise(){
 
 function collectCleanText(element){
     let result = "";
+    const singleTags = new Set(['BR']);
     
     element.childNodes.forEach(node => {
         if(node.nodeType === Node.TEXT_NODE){
@@ -533,7 +534,12 @@ function collectCleanText(element){
             }else if(node.tagName === "SPAN" && node.hasAttribute("data-label")){
                 result += collectCleanText(node);
 
+            }else if(singleTags.has(node.tagName)){
+                result += `</${node.tagName.toLowerCase()}>`;
+                result += collectCleanText(node);
+
             }else{
+
                 result += `<${node.tagName.toLowerCase()}`;
                 
                 if(node.attributes.length > 0){
@@ -543,6 +549,8 @@ function collectCleanText(element){
                 }
                 result += ">";
                 result += collectCleanText(node);
+                result += `</${node.tagName.toLowerCase()}>`;
+
             }
         }
     });
