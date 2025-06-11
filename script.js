@@ -208,7 +208,7 @@ function initHighlightView(){
                     highlightLock = true;
 
                     setTimeout(() => {
-                        user === 0 ? highlightSelection(labeledMarker) : highlightSelectionStudent();
+                        highlightSelection();
                         setTimeout(()=> {
                             highlightLock = false;
                         }, 200);
@@ -237,24 +237,37 @@ Bedingungen:
 - NOPE bei doppel Markierung, Markierung entfernen ?! Wäre nicht schlecht
     */
 
-function highlightSelection(labeledMarker){
-    const editor = tinymce.get("lecTinyMCE");
-    const selection = editor.selection;
-    const rng = selection.getRng(); //tinymce range objekt
+function highlightSelection(){
+    let editor = null;
+    let selection = null;
+    let rng = null;
+
+    if(user === 0){
+        editor = tinymce.get("lecTinyMCE");
+        selection = editor.selection;
+        rng = selection.getRng();
+
+        if(selection.getNode().nodeName !== "P" && selection.getNode().nodeName !== "SPAN"){
+            alert("Block-Element");
+        return;
+        }
+
+    }else{
+        editor = document.getElementById('studentExercise');
+        selection = window.getSelection();
+        rng = selection.getRangeAt(0);
+    }
+    
+
+ //tinymce range objekt
 
     if(rng.toString().trim() === ""){
-        return;
-    }
-
-    console.log(selection.getNode().nodeName);
-    if(selection.getNode().nodeName !== "P" && selection.getNode().nodeName !== "SPAN"){
-        alert("Block-Element");
+        console.log("leerbereich");
         return;
     }
 
     if(isSelectionBetweenBracketAndSub()){
         console.log("bracket sub")
-
         return;
     }
     
@@ -262,13 +275,9 @@ function highlightSelection(labeledMarker){
     const countOpenBrac = rng.toString().match(/\[/g) || [];
     const countClosedBrac = rng.toString().match(/\]/g) || [];
 
-    // normale markierung -> [0][0]
-    // Zusammenfassen -> [x][x]
-    // 1 markierung übermarkieren -> [1][1]
-
     if((countOpenBrac.length === 0 && countClosedBrac.length === 0) ||
         (countOpenBrac.length === countClosedBrac.length)){
-            wrapping(rng, labeledMarker.label, labeledMarker.color);
+            wrapping(rng);
         }else{
             console.log("überlappung");
             return;
