@@ -58,6 +58,12 @@ document.getElementById("studEingabe").addEventListener('click', (e)=>{
 
     const body = document.getElementById('studentExercise');
     extractSolution(body, 1);
+    const report = evaluate(categories)
+    const k = filterEvaluation(report);
+    console.log(k);
+    console.log(report);
+ 
+
 })
 
 
@@ -384,11 +390,7 @@ function removeHighlight(span) {
 }
 
 
-function extractSolution(root, user){
-    traverseTree(root, user);
-}
-
-function traverseTree(element, user){
+function traverseTree1(element, user){
     if(element.nodeType !== Node.ELEMENT_NODE)return;
 
     if(element.nodeName === "SPAN" && element.dataset.label){
@@ -501,12 +503,11 @@ function prepStudExercise(){
 function collectCleanText(element){
     let result = "";
     const singleTags = new Set(['BR']);
-    
     element.childNodes.forEach(node => {
         if(node.nodeType === Node.TEXT_NODE){
             result += node.nodeValue.replace(/\[|\]/g, "");
         }else if(node.nodeType === Node.ELEMENT_NODE){
-            if(node.tagName === "SUB") {
+            if(node.tagName === "SUB"){
                 return;
 
             }else if(node.tagName === "SPAN" && node.hasAttribute("data-label")){
@@ -536,5 +537,108 @@ function collectCleanText(element){
     return result;
 }
 
+/*
+Text-Knoten
+Element-Knoten
+    - Sub-Knoten überspringen
+    - Span-Knoten mit dataset-label zählen und extrahieren
+        - text
+        - start + end index
+        - tolLeft = Toleranz nach links
+        - tolRight = Toleranz nach rechts
+    - alle anderen Konoten überspringen
 
+*/
+
+function extractSolution(root, user){ 
+
+  const toleranz = document.getElementById("toleranz").value;
+
+  const pos = {count:0};
+
+  //hilfsfunktion
+  const addVisible = txt =>
+    (pos.count += txt.replace(/\[|\]/g, "").length);
+
+  function traverseTree(node) {
+
+    /*Text-Knoten */
+    if(node.nodeType === Node.TEXT_NODE){
+      addVisible(node.nodeValue || "");
+      return;
+    }
+
+    if(node.nodeType === Node.ELEMENT_NODE && node.tagName === "SUB") return;
+
+    if(node.nodeType === Node.ELEMENT_NODE){
+      if(node.tagName === "P") pos.count += 1;
+
+      if(node.tagName === "SPAN" && node.dataset.label){
+        const label      = node.dataset.label;
+        const startIndex = pos.count;
+
+        //Inhalt Span
+        node.childNodes.forEach(traverseTree);
+
+        const endIndex  = pos.count - 1;
+        const text      = extractLabeledText(node);
+
+        if(text.trim() !== ""){
+          const actualCategory = categories.find(c => c.label === label);
+          if(actualCategory){
+            const entry = {
+              text,
+              start   : startIndex,
+              end     : endIndex,
+              tolLeft : Math.max(0, startIndex - toleranz),
+              tolRight: endIndex + toleranz
+            };
+            (user === 0 ? actualCategory.solutionLec : actualCategory.solutionStud).push(entry);
+          }
+        }
+        return;
+      }
+      //nächstes Element
+      node.childNodes.forEach(traverseTree);
+    }
+  }
+  //Startt
+  traverseTree(root);
+}
+
+function evaluate(categories){
+  return categories.map(cat => {
+
+    const missing = [];
+    const wrong   = [];
+
+    //Fehlende MArkierungen -> 
+    for(const lec of cat.solutionLec){
+      const hit = cat.solutionStud.some(st =>
+        st.start >= lec.tolLeft && st.end <= lec.tolRight
+      );
+      if (!hit) missing.push(lec);
+    }
+
+    // Falsche Markierungen
+    for(const st of cat.solutionStud){
+      const match = cat.solutionLec.some(lec =>
+        st.start >= lec.tolLeft && st.end <= lec.tolRight
+      );
+      if(!match) wrong.push(st);
+    }
+
+    return{
+      label   : cat.label,
+      correct : missing.length === 0 && wrong.length === 0,
+      missing : missing.length,
+      wrong,
+      extra : cat.extra
+    };
+  });
+}
+
+function filterEvaluation(categories){
+    return categories.filter(categories => categories.missing != 0);
+}
 
