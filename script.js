@@ -62,10 +62,8 @@ document.getElementById("studEingabe").addEventListener('click', (e)=>{
     const k = filterEvaluation(report);
     console.log(k);
     console.log(report);
- 
-
+    printEvaluation();
 })
-
 
 function deleteModeTrigger(){
         deleteMode = !deleteMode;
@@ -631,11 +629,45 @@ function evaluate(categories){
     return{
       label   : cat.label,
       correct : missing.length === 0 && wrong.length === 0,
-      missing : missing.length,
+      missing,
       wrong,
       extra : cat.extra
     };
   });
+}
+
+function printEvaluation(){
+    const report = evaluate(categories);
+
+    let wrongCounter, missingCounter;
+    let tip;
+
+    wrongCounter = report.reduce((sum, cat) => sum += cat.wrong.length, 0);
+    missingCounter = report.reduce((sum, cat) => sum += cat.missing.length, 0);
+    tip = report
+        .filter(cat => cat.wrong.length || cat.missing.length)
+        .map(cat => cat.extra)                                 
+        .join('; '); 
+
+    const missings = document.createElement("P");
+    const wrongs = document.createElement("P");
+    const tips = document.createElement("p");
+
+    const textMissings=document.createTextNode(`Fehlende Markierung: ${missingCounter}`);
+    const textWrongs=document.createTextNode(`Falsche Markierung: ${wrongCounter}`);
+    const textTips = document.createTextNode(`Hinweise: ${tip}`);
+
+    missings.appendChild(textMissings);
+    wrongs.appendChild(textWrongs);
+    tips.appendChild(textTips);
+
+    const container = document.getElementById("ergebnis");
+
+    if(missingCounter) container.appendChild(missings);
+    if(wrongCounter) container.appendChild(wrongs);
+    if(missingCounter || wrongCounter) container.appendChild(tips);
+
+
 }
 
 function filterEvaluation(categories){
