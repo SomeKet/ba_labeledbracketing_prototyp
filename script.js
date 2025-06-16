@@ -6,10 +6,9 @@ tinymce.init({
     plugins: [
       // Core editing features
       'anchor', 'charmap', 'codesample', 'emoticons', 'lists', 'searchreplace', 'table', 'visualblocks', 'wordcount','save', 'code'
-    ],
+],
     paste_as_text: true, /************* WICHTIG FÜR only <p></p> durch pasten von Text *******************/
     toolbar: 'abc | code | save | highlight | textmarkierung | tagger | undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
-
 }); 
 
 let categories = [];
@@ -65,6 +64,25 @@ document.getElementById("studEingabe").addEventListener('click', (e)=>{
     printEvaluation();
 })
 
+document.getElementById('categoryForm').addEventListener('submit', (e) => {
+    e.preventDefault(); //verhinder redirect
+
+    const data = new FormData(e.target);
+    const name = data.get("name");
+    const label = data.get("label");
+    const color = data.get("color");
+    const extra = data.get("extra");
+
+    if(!checkCategoryDuplette(name, label, color)){
+        return;    
+    }else{
+        console.log(name, label, color, extra);
+        createCategory(name, label, color, extra);
+        document.getElementById('categoryForm').reset();
+    }
+
+})
+
 function deleteModeTrigger(){
         deleteMode = !deleteMode;
         if(user === 0){
@@ -91,24 +109,6 @@ function deleteModeTrigger(){
         }
 }
 
-document.getElementById('categoryForm').addEventListener('submit', (e) => {
-    e.preventDefault(); //verhinder redirect
-
-    const data = new FormData(e.target);
-    const name = data.get("name");
-    const label = data.get("label");
-    const color = data.get("color");
-    const extra = data.get("extra");
-
-    if(!checkCategoryDuplette(name, label, color)){
-        return;    
-    }else{
-        console.log(name, label, color, extra);
-        createCategory(name, label, color, extra);
-        document.getElementById('categoryForm').reset();
-    }
-
-})
 
 function createCategory(name, label, color, extra){
     categories.push({name, label, color, extra,solutionLec:[], solutionStud:[]});
@@ -191,7 +191,9 @@ function viewFocus(){
     }
 }
 
-
+/*
+1. setInterval(() => {..}) Damit 
+*/
 function initHighlightView(){
     const checkEditor = setInterval(() => {
         const editor = viewFocus();
@@ -266,7 +268,7 @@ function highlightSelection(){
         selection = editor.selection;
         rng = selection.getRng();
 
-        if(selection.getNode().nodeName !== "P" && selection.getNode().nodeName !== "SPAN"){
+        if(selection.getNode().nodeName === "DIV"){
             alert("Block-Element");
         return;
         }
@@ -316,7 +318,6 @@ function bracketCounter(str){
   }
   return depth === 0;
 }
-
 
 function wrapping(rng){
     const text = rng.extractContents();
@@ -498,9 +499,57 @@ function prepStudExercise(){
     exercsise.innerHTML = exerciseText;
 }
 
-function collectCleanText(element){
+function collectCleanText(root){
+    let result ="";
+    const singleTags= new Set(['BR']);
+
+    function traverse(node){
+        
+        //Text übernehmen, ohne Klammern
+        if(node.nodeType === Node.TEXT_NODE){
+            result += node.nodeValue.replace(/\[|\]/g, "");
+            return;
+        }
+
+        //Sub überspringen
+        if(node.nodeType === Node.ELEMENT_NODE && node.tagName === "SUB") return;
+
+        //Element Knoten
+        if(node.nodeType === Node.ELEMENT_NODE){
+             //SPAN Element
+            if(node.tagName === "SPAN" && node.hasAttribute("data-label")){
+                node.childNodes.forEach(traverse);
+                return;
+            }
+            //Bestimmte SingleTags und dessen Attribute -> SingleTags haben kein />
+            if(singleTags.has(node.tagName)){
+                result += `<${node.tagName.toLowerCase()}`;
+                for(const attr of node.attributes){
+                    result += ` ${attr.name}="${attr.value}"`;
+                }
+                result += ">";
+                return
+            }
+
+            //alle anderen Elemente und dessen Attribute und closing Tag
+            result += `<${node.tagName.toLowerCase()}`;
+            for(const attr of node.attributes){
+                result += ` ${attr.name}="${attr.value}"`
+            }
+            result += ">";
+            node.childNodes.forEach(traverse);
+            result += `</${node.tagName.toLowerCase()}>`
+        }
+    }
+    traverse(root);
+    return result;
+
+}
+
+function collectCleanText1(element){
     let result = "";
     const singleTags = new Set(['BR']);
+    
     element.childNodes.forEach(node => {
         if(node.nodeType === Node.TEXT_NODE){
             result += node.nodeValue.replace(/\[|\]/g, "");
@@ -521,7 +570,7 @@ function collectCleanText(element){
                 
                 if(node.attributes.length > 0){
                     for(let attr of node.attributes){
-                        result += ` ${attr.name}="${attr.value}"`;
+                        result += `${attr.name}="${attr.value}"`;
                     }
                 }
                 result += ">";
@@ -535,18 +584,10 @@ function collectCleanText(element){
     return result;
 }
 
-/*
-Text-Knoten
-Element-Knoten
-    - Sub-Knoten überspringen
-    - Span-Knoten mit dataset-label zählen und extrahieren
-        - text
-        - start + end index
-        - tolLeft = Toleranz nach links
-        - tolRight = Toleranz nach rechts
-    - alle anderen Konoten überspringen
 
-*/
+
+
+//Bewertung
 
 function extractSolution(root, user){ 
 
