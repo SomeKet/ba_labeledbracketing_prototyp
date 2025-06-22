@@ -693,20 +693,25 @@ function printEvaluation(){
     const missings = document.createElement("P");
     const wrongs = document.createElement("P");
     const tips = document.createElement("p");
+    const success = document.createElement("p");
 
     const textMissings=document.createTextNode(`Fehlende Markierung: ${missingCounter}`);
     const textWrongs=document.createTextNode(`Falsche Markierung: ${wrongCounter}`);
     const textTips = document.createTextNode(`Hinweise: ${tip}`);
+    const textSuccess = document.createTextNode("Alles richtig");
+    
 
     missings.appendChild(textMissings);
     wrongs.appendChild(textWrongs);
     tips.appendChild(textTips);
+    success.appendChild(textSuccess);
 
     const container = document.getElementById("ergebnis");
 
     if(missingCounter) container.appendChild(missings);
     if(wrongCounter) container.appendChild(wrongs);
     if(missingCounter || wrongCounter) container.appendChild(tips);
+    if(!missingCounter && !wrongCounter) container.appendChild(success);
 
 
 }
