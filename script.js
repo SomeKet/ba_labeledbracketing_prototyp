@@ -630,7 +630,7 @@ function extractSolution(root, user){
               start   : startIndex,
               end     : endIndex,
               tolLeft : Math.max(0, startIndex - toleranz),
-              tolRight: endIndex + toleranz
+              tolRight: Math.max(endIndex + toleranz)
             };
             (user === 0 ? actualCategory.solutionLec : actualCategory.solutionStud).push(entry);
           }
