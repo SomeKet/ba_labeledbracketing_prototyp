@@ -22,12 +22,12 @@ let user = 0;
 document.addEventListener('DOMContentLoaded', function(){
     setTimeout(initializeHighlighter, 500);
 
-    let btn1 = {name:"Satz", label:"s", color:"red", extra:"Satz"};
-    let btn2 = {name:"Nominalphrase", label:"np", color:"green", extra:"Nominalphrase"};
-    let btn3 = {name:"Verbalphrase", label:"vp", color:"blue", extra:"Verbalphrase"};
-    let btn4 = {name:"Verb", label:"v", color:"orange", extra:"Verb"};
+    let btn1 = {name:"Satz", label:"S", color:"red", extra:"Satz"};
+    let btn2 = {name:"Nominalphrase", label:"NP", color:"green", extra:"Nominalphrase"};
+    let btn3 = {name:"Verbalphrase", label:"VP", color:"blue", extra:"Verbalphrase"};
+    //let btn4 = {name:"Verb", label:"v", color:"orange", extra:"Verb"};
 
-    let btnlist = [btn1, btn2, btn3, btn4];
+    let btnlist = [btn1, btn2, btn3];
 
     btnlist.forEach(btn => createCategory(btn.name, btn.label, btn.color, btn.extra));
 
@@ -54,6 +54,9 @@ document.getElementById("solution").addEventListener('click', (e)=>{
 
 document.getElementById("studEingabe").addEventListener('click', (e)=>{
     e.preventDefault();
+
+    categories.forEach(category => category.solutionStud = []);
+    document.getElementById("ergebnis").innerHTML = "";
 
     const body = document.getElementById('studentExercise');
     extractSolution(body, 1);
@@ -644,6 +647,7 @@ function extractSolution(root, user){
   //Startt
   traverseTree(root);
 }
+
 
 function evaluate(categories){
   return categories.map(cat => {
