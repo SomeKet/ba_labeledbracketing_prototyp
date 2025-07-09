@@ -338,7 +338,7 @@ function wrapping(rng){
     wrapperSub.setAttribute("style", `font-size: 14px;`);
     makeUnselectable(wrapperSub);
 
-    const labelTextNode = document.createTextNode(labeledMarker.label);
+    const labelTextNode = document.createTextNode(`${labeledMarker.label} `);
     wrapperSub.appendChild(labelTextNode);
 
 
