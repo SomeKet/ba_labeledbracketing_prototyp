@@ -206,43 +206,74 @@ function initHighlightView(){
         let editorBody = null;
         user === 0 ? editorBody = editor.getBody() : editorBody = editor; 
 
-        if(editor && editorBody) {
+        if(editor && editorBody){
             clearInterval(checkEditor);
             console.log("Highlighter initialisiert");
         
             editorBody.addEventListener("click", function(e) {
-                if(deleteMode && e.target.closest('span[data-label]')) {
+                if(deleteMode && e.target.closest('span[data-label]')){
                     e.preventDefault();
                     e.stopPropagation();
                     removeHighlight(e.target.closest('span[data-label]'));
                 }
             }, true);
             
-            editorBody.addEventListener("mousedown", function () {
-                markingFlag = 0;
-            }, false);
-            
-            editorBody.addEventListener("mousemove", function () {
-                markingFlag = 1;
-            }, false);
-            
-            let highlightLock = false;
-            editorBody.addEventListener("mouseup", function () {
-                if(markingFlag === 1 && labeledMarker.label && labeledMarker.color) {
-                    if(highlightLock) return;
-
-                    highlightLock = true;
-
-                    setTimeout(() => {
-                        highlightSelection();
-                        setTimeout(()=> {
-                            highlightLock = false;
-                        }, 200);
-                    }, 10); // Kurze Verzögerung für saubere Selektion
-                }
-            }, false);
+            mouseSelecting(editorBody, editor);
+            shiftSelecting(editorBody, editor);
         }
     }, 1000);
+}
+
+function shiftSelecting(editorBody, editor){
+  let shiftSelectingActive = false;
+  let highlightLock = false;
+
+  editorBody.addEventListener("keydown", e =>{
+    if(e.shiftKey){
+      shiftSelectingActive = true;
+    }
+  }, false);
+
+  editorBody.addEventListener("keyup", e => {
+    if (e.key === "Shift" && shiftSelectingActive){
+      if (labeledMarker.label && labeledMarker.color){
+        if (!highlightLock) {
+          highlightLock = true;
+          setTimeout(() => {
+            highlightSelection();
+            editor.selection.collapse();
+            setTimeout(() => highlightLock = false, 200);
+          }, 10);
+        }
+      }
+      shiftSelectingActive = false;
+    }
+  }, false);
+}
+
+function mouseSelecting(editorBody, editor){
+    let highlightLock = false;
+
+    editorBody.addEventListener("mousedown", function(){
+        markingFlag = 0;
+    }, false)
+
+    editorBody.addEventListener("mousemove", function () {
+        markingFlag = 1;
+    }, false);
+
+    editorBody.addEventListener("mouseup", function () {
+        if(markingFlag === 1 && labeledMarker.label && labeledMarker.color) {
+            if(highlightLock) return;
+            highlightLock = true;
+            setTimeout(() => {
+                highlightSelection();
+                editor.selection.collapse();
+                setTimeout(()=> 
+                    highlightLock = false, 200);
+            }, 10); // Kurze Verzögerung für saubere Selektion
+        }
+    }, false);
 }
 
 /*
