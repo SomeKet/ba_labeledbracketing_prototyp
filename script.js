@@ -651,7 +651,7 @@ function extractSolution(root, user){
  * Sz2: Bei tolerance > 0 -> nur Start/End in ±tolerance; Text wird NICHT verglichen
  *
  */
-function evaluateFunktioniert(categories, tolerance = 0) {
+function evaluate(categories, tolerance = 0) {
   // true, wenn zwei Markierungen als Treffer gelten
   const isMatch = (lec, stud, tol) => {
     const toleranzOk =
