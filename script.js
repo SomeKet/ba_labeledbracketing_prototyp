@@ -16,6 +16,7 @@ const labeledMarker = {label:"", color:""};
 let markingFlag = 0;
 let deleteMode = false;
 let user = 0;
+let tolerance = 0;
 
 
     // Starte die Initialisierung nach DOM-Load
@@ -44,6 +45,7 @@ document.getElementById("solution").addEventListener('click', (e)=>{
     });
     
     user = 1;
+    tolerance = document.getElementById('toleranz').value === "" ? 0 : document.getElementById('toleranz').value;
     document.getElementById('lecturerView').hidden = true;
     document.getElementById('studentView').hidden = false;
     prepStudButtons();
@@ -60,7 +62,7 @@ document.getElementById("studEingabe").addEventListener('click', (e)=>{
 
     const body = document.getElementById('studentExercise');
     extractSolution(body, 1);
-    const report = evaluate(categories)
+    const report = evaluate(categories, tolerance)
     const k = filterEvaluation(report);
     console.log(k);
     console.log(report);
@@ -594,8 +596,6 @@ function collectCleanText1(element){
 
 function extractSolution(root, user){ 
 
-  const toleranz = document.getElementById("toleranz").value;
-
   const pos = {count:0};
 
   //hilfsfunktion
@@ -632,8 +632,6 @@ function extractSolution(root, user){
               text,
               start   : startIndex,
               end     : endIndex,
-              tolLeft : Math.max(0, startIndex - toleranz),
-              tolRight: Math.max(endIndex + toleranz)
             };
             (user === 0 ? actualCategory.solutionLec : actualCategory.solutionStud).push(entry);
           }
@@ -648,41 +646,63 @@ function extractSolution(root, user){
   traverseTree(root);
 }
 
+/**
+ * Sz1: Bei tolerance = 0 -> exakte Übereinstimmung (inkl. Text)
+ * Sz2: Bei tolerance > 0 -> nur Start/End in ±tolerance; Text wird NICHT verglichen
+ *
+ */
+function evaluateFunktioniert(categories, tolerance = 0) {
+  // true, wenn zwei Markierungen als Treffer gelten
+  const isMatch = (lec, stud, tol) => {
+    const toleranzOk =
+      Math.abs(lec.start - stud.start) <= tol &&
+      Math.abs(lec.end   - stud.end  ) <= tol;
 
-function evaluate(categories){
+    // Bei tol = 0 muss auch der Text exakt gleich sein - Sz:1
+    if(tol === 0){
+      const textOk =
+        lec.text.toLowerCase() === stud.text.toLowerCase();
+      return toleranzOk && textOk;
+    }
+
+    // Bei tol > 0 interessiert nur die Spanne - Sz:2
+    return toleranzOk;
+  };
+
   return categories.map(cat => {
+    const missing     = [];
+    const wrong       = [];
+    const usedStud = new Set();   
 
-    const missing = [];
-    const wrong   = [];
-
-    //Fehlende MArkierungen -> 
-    for(const lec of cat.solutionLec){
-      const hit = cat.solutionStud.some(st =>
-        st.start >= lec.tolLeft && st.end <= lec.tolRight
+    //fehlende Markierungen 
+    cat.solutionLec.forEach(lec => {
+      const idx = cat.solutionStud.findIndex(
+        (st, i) => !usedStud.has(i) && isMatch(lec, st, tolerance)
       );
-      if (!hit) missing.push(lec);
-    }
+      if (idx !== -1) {
+        usedStud.add(idx);
+      } else {
+        missing.push(lec);
+      }
+    });
 
-    // Falsche Markierungen
-    for(const st of cat.solutionStud){
-      const match = cat.solutionLec.some(lec =>
-        st.start >= lec.tolLeft && st.end <= lec.tolRight
-      );
-      if(!match) wrong.push(st);
-    }
+    // --- überflüssige / falsche Markierungen ---
+    cat.solutionStud.forEach((stud, i) => {
+      if (!usedStud.has(i)) wrong.push(stud);
+    });
 
-    return{
+    return {
       label   : cat.label,
       correct : missing.length === 0 && wrong.length === 0,
       missing,
       wrong,
-      extra : cat.extra
+      extra   : cat.extra,
     };
   });
 }
 
 function printEvaluation(){
-    const report = evaluate(categories);
+    const report = evaluate(categories, tolerance);
 
     let wrongCounter, missingCounter;
     let tip;
