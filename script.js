@@ -88,6 +88,8 @@ document.getElementById('categoryForm').addEventListener('submit', (e) => {
 
 })
 
+document.getElementById("dom-virtualisation").addEventListener('click', updateTree);
+
 function deleteModeTrigger(){
         deleteMode = !deleteMode;
         if(user === 0){
@@ -241,7 +243,7 @@ function shiftSelecting(editorBody, editor){
           highlightLock = true;
           setTimeout(() => {
             highlightSelection();
-            editor.selection.collapse();
+            collapseSelection();
             setTimeout(() => highlightLock = false, 200);
           }, 10);
         }
@@ -268,12 +270,23 @@ function mouseSelecting(editorBody, editor){
             highlightLock = true;
             setTimeout(() => {
                 highlightSelection();
-                editor.selection.collapse();
+                collapseSelection();
                 setTimeout(()=> 
                     highlightLock = false, 200);
             }, 10); // Kurze Verzögerung für saubere Selektion
         }
     }, false);
+}
+
+function collapseSelection(){
+    if(user === 0){
+        const editor = tinymce.get("lecTinyMCE")
+        editor.selection.collapse();
+    }else{
+        const selection = window.getSelection();
+        const rng = selection.getRangeAt(0);
+        rng.collapse(false);
+    }
 }
 
 /*
@@ -773,5 +786,21 @@ function printEvaluation(){
 
 function filterEvaluation(categories){
     return categories.filter(categories => categories.missing != 0);
+}
+
+function updateTree(){
+    let domText = ""
+    if(user === 0){
+        const editor = tinymce.get("lecTinyMCE");
+        domText = editor.getContent({format: "html"});
+        console.log(domText);
+    }else{
+        domText = document.getElementById("studentExercise").innerHTML;
+        console.log(domText);
+    }
+}
+
+function domTreeVirtualisation(domText){
+
 }
 
