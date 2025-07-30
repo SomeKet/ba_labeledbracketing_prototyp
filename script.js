@@ -23,14 +23,14 @@ let tolerance = 0;
 document.addEventListener('DOMContentLoaded', function(){
     setTimeout(initializeHighlighter, 500);
 
-    let btn1 = {name:"Satz", label:"S", color:"red", extra:"Satz"};
-    let btn2 = {name:"Nominalphrase", label:"NP", color:"green", extra:"Nominalphrase"};
-    let btn3 = {name:"Verbalphrase", label:"VP", color:"blue", extra:"Verbalphrase"};
+    let btn1 = {name:"Satz", label:"S", color:"red", extra:"Satz", points:"1"};
+    let btn2 = {name:"Nominalphrase", label:"NP", color:"green", extra:"Nominalphrase", points:"1"};
+    let btn3 = {name:"Verbalphrase", label:"VP", color:"blue", extra:"Verbalphrase", points:"2"};
     //let btn4 = {name:"Verb", label:"v", color:"orange", extra:"Verb"};
 
     let btnlist = [btn1, btn2, btn3];
 
-    btnlist.forEach(btn => createCategory(btn.name, btn.label, btn.color, btn.extra));
+    btnlist.forEach(btn => createCategory(btn.name, btn.label, btn.color, btn.extra, btn.points));
 
 });
 
@@ -77,12 +77,12 @@ document.getElementById('categoryForm').addEventListener('submit', (e) => {
     const label = data.get("label");
     const color = data.get("color");
     const extra = data.get("extra");
+    const points = data.get("points");
 
     if(!checkCategoryDuplette(name, label, color)){
         return;    
     }else{
-        console.log(name, label, color, extra);
-        createCategory(name, label, color, extra);
+        createCategory(name, label, color, extra, points);
         document.getElementById('categoryForm').reset();
     }
 
@@ -117,8 +117,8 @@ function deleteModeTrigger(){
 }
 
 
-function createCategory(name, label, color, extra){
-    categories.push({name, label, color, extra,solutionLec:[], solutionStud:[]});
+function createCategory(name, label, color, extra, points){
+    categories.push({name, label, color, points, extra,solutionLec:[], solutionStud:[]});
 
     let btn = document.createElement("button");
     btn.className=`category-btn`;
