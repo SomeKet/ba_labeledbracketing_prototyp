@@ -36,8 +36,15 @@
             <div>
                 <input type="number" min="0" max="5" id="toleranz" placeholder="Toleranz">
             </div>
-            <button id="solution">Start</button>
+            <button id="goToStudent">Start</button>
         </div>
+
+            <div>
+                <button id="dom-virtualisation">Erstelle Übersicht</button>
+                <div id="treeLec" class="tree"></div>
+                <div id="markierungenLec"></div>
+            </div>
+
     </div>
     <div id="studentView" hidden>
         <h2>Student</h2>
@@ -48,14 +55,15 @@
                 <button id="studEingabe">FINISH</button>
         
             </div>
+            <div>
+                <button id="dom-virtualisationStud">Erstelle Übersicht</button>
+                <div id="treeStud" class="tree"></div>
+                <div id="markierungenStud"></div>
+            </div>
             <div id="ergebnis"></div>
         </div>
     </div>
 
-    <div>
-        <button id="dom-virtualisation">Erstelle Übersicht</button>
-        <div id="tree" class="tree"></div>
-        <div id="markierungen"></div>
-    </div>
+    
 </body>
 </html>

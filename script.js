@@ -35,14 +35,11 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 
 
-document.getElementById("solution").addEventListener('click', (e)=>{
+document.getElementById("goToStudent").addEventListener('click', (e)=>{
     e.preventDefault();
 
     const editor = tinymce.get("lecTinyMCE");
-    extractSolution(editor.getBody(), 0);
-    categories.forEach(c => {
-        console.log(`Kategorie: ${c.label}`, c.solution);
-    });
+    //extractSolution(editor.getBody(), user);
     
     user = 1;
     tolerance = document.getElementById('toleranz').value === "" ? 0 : document.getElementById('toleranz').value;
@@ -88,7 +85,21 @@ document.getElementById('categoryForm').addEventListener('submit', (e) => {
 
 })
 
-document.getElementById("dom-virtualisation").addEventListener('click', updateTree);
+document.getElementById("dom-virtualisation").addEventListener('click', (e) =>{
+    e.preventDefault();
+
+        const editor = tinymce.get("lecTinyMCE");
+        extractSolution(editor.getBody(), user);
+        renderMarkierungen(user);
+});
+
+document.getElementById("dom-virtualisationStud").addEventListener('click', (e) =>{
+    e.preventDefault();
+
+        const body = document.getElementById("studentExercise");
+        extractSolution(body, user);
+        renderMarkierungen(user);
+});
 
 function deleteModeTrigger(){
         deleteMode = !deleteMode;
@@ -631,11 +642,18 @@ function collectCleanText1(element){
 }
 
 
+function clearSolutionList(user){
+    user === 0 ? 
+        categories.forEach(cat => cat.solutionLec = []) : categories.forEach(cat => cat.solutionStud = []);
+
+}
 
 
 //Bewertung
 
 function extractSolution(root, user){ 
+    //clearSolutionList(user);
+    console.log("trig")
 
   const pos = {count:0};
 
@@ -834,3 +852,87 @@ function domTreeVirtualisation(node){
 
 }
 
+//Auflistung aller Markierungen
+
+function printMarkings(user){
+    categories.forEach(category => category.solutionLec.forEach(e => console.log(e.text)));
+}
+
+// wrapper Function für Markierungen
+function wrapperMarkierung(element){
+    let
+} 
+
+function allMarkings(user){
+    user === 0 ? renderMarkierungenLec() : renderMarkierungenStud();
+}
+
+
+function renderMarkierungen(user) {
+    let container;
+
+    user === 0 ? container = document.getElementById("markierungenLec")
+        : container = document.getElementById("markierungenStud");
+
+    container.innerHTML = ""; // Reset
+
+    categories.forEach((cat) => {
+      const col = document.createElement("div");
+      col.style.border = `1px solid ${cat.color}`;
+      col.style.padding = "8px";
+      col.style.minWidth = "200px";
+
+      const header = document.createElement("h4");
+      header.textContent = cat.label;
+      header.style.color = cat.color;
+      col.appendChild(header);
+
+      if(user === 0){
+        cat.solutionLec.forEach((mark) => {
+        const markDiv = document.createElement("div");
+        markDiv.style.marginBottom = "8px";
+
+        // Anzeige
+        const textSpan = document.createElement("span");
+        textSpan.textContent = mark.text;
+        markDiv.appendChild(textSpan);
+
+        // Input für Punkte
+        const input = document.createElement("input");
+        input.type = "number";
+        input.value = mark.points !== undefined ? mark.points : cat.points;
+        input.style.margin = "0 8px";
+        input.style.width = "50px";
+        input.addEventListener("input", (e) => {
+          mark.points = parseFloat(e.target.value);
+        });
+        markDiv.appendChild(input);
+
+        // Reset Button
+        const resetBtn = document.createElement("button");
+        resetBtn.textContent = "Reset";
+        resetBtn.addEventListener("click", () => {
+          input.value = cat.points;
+          mark.points = cat.points;
+        });
+        markDiv.appendChild(resetBtn);
+
+        col.appendChild(markDiv);
+      });
+      }else{
+        cat.solutionStud.forEach((mark) => {
+            const markDiv = document.createElement("div");
+        markDiv.style.marginBottom = "8px";
+
+        // Anzeige
+        const textSpan = document.createElement("span");
+        textSpan.textContent = mark.text;
+        markDiv.appendChild(textSpan);
+        col.appendChild(markDiv);
+        })
+      }
+      
+
+      container.appendChild(col);
+    });
+  }
