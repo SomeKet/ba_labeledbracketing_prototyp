@@ -792,15 +792,47 @@ function updateTree(){
     let domText = ""
     if(user === 0){
         const editor = tinymce.get("lecTinyMCE");
-        domText = editor.getContent({format: "html"});
-        console.log(domText);
+        domText = editor.getBody();
+        document.getElementById("tree").appendChild(domTreeVirtualisation(domText));
+
     }else{
-        domText = document.getElementById("studentExercise").innerHTML;
-        console.log(domText);
+        domText = document.getElementById("studentExercise");
+        document.getElementById("tree").appendChild(domTreeVirtualisation(domText));
+        
     }
 }
 
-function domTreeVirtualisation(domText){
+/**
+ * - Nur data-label + Text anzeigen? - horizontal? 
+ * 
+ *              / text
+ * - DFS -root 
+ *              \ text
+ *               
+ * welche Bedingugnen müssen erfüllt sein?
+ * - element muss ELEMENT_NODE sein
+ * - element darf kein SUB oder BODY Node sein
+ *      - element muss TEXT_NODE sein
+ * 
+ * was muss mit übergebenen Element passieren?
+ *  - copy von element erstellen damit dies modifiziert werden kann -> element.cloneNode(true);
+ *  - content extrahieren
+ *  - [] entfernen -> replace(/\[|\]/g, "")
+ *  - SUB-Element entfernen 
+ *  - node Obj. erstellen mit label?, name/content, children: []
+ * 
+ * was passiert, wenn element bearbeitet wurde?
+ * - element wurde sozusagen als "parent" deklariert und dann müssen alle childNodes bearbeitet werden
+ *  - jedes childNode Element muss convertiert werden (rekursiv)
+ *  - es müssen null Element rausgefiltert werden filter(x => x != null)
+ *  - jedes verbleibende Element muss dann in node.children gespeichert werden
+ * 
+ * rückgabe des nodes
+ */
+function domTreeVirtualisation(node){
+
+    if(!node) return;
+
 
 }
 

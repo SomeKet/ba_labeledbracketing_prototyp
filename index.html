@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
     <script type="text/javascript" src="https://cdn.tiny.cloud/1/e0q0w4t1ep5f35kyxt999mzlm4ro2px179u580taztflq9sf/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+
 </head>
 <body>
     <h1>Bachelorprojekt - Prototype</h1>
@@ -34,7 +35,7 @@
             <div>
                 <input type="number" min="0" max="5" id="toleranz" placeholder="Toleranz">
             </div>
-            <button id="solution">GOGO</button>
+            <button id="solution">Start</button>
         </div>
     </div>
     <div id="studentView" hidden>
@@ -51,7 +52,9 @@
     </div>
 
     <div>
-        <button id="dom-virtualisation">Update Baum</button>
+        <button id="dom-virtualisation">Erstelle Übersicht</button>
+        <div id="tree" class="tree"></div>
+        <div id="markierungen"></div>
     </div>
 </body>
 </html>
