@@ -23,9 +23,9 @@ let tolerance = 0;
 document.addEventListener('DOMContentLoaded', function(){
     setTimeout(initializeHighlighter, 500);
 
-    let btn1 = {name:"Satz", label:"S", color:"red", extra:"Satz", points:"1"};
-    let btn2 = {name:"Nominalphrase", label:"NP", color:"green", extra:"Nominalphrase", points:"1"};
-    let btn3 = {name:"Verbalphrase", label:"VP", color:"blue", extra:"Verbalphrase", points:"2"};
+    let btn1 = {name:"Satz", label:"S", color:"red", extra:"Satz", points:1};
+    let btn2 = {name:"Nominalphrase", label:"NP", color:"green", extra:"Nominalphrase", points:1};
+    let btn3 = {name:"Verbalphrase", label:"VP", color:"blue", extra:"Verbalphrase", points:2};
     //let btn4 = {name:"Verb", label:"v", color:"orange", extra:"Verb"};
 
     let btnlist = [btn1, btn2, btn3];
@@ -198,9 +198,6 @@ function viewFocus(){
     }
 }
 
-/*
-1. setInterval(() => {..}) Damit 
-*/
 function initHighlightView(){
     const checkEditor = setInterval(() => {
         const editor = viewFocus();
@@ -220,13 +217,13 @@ function initHighlightView(){
                 }
             }, true);
             
-            mouseSelecting(editorBody, editor);
-            shiftSelecting(editorBody, editor);
+            mouseSelecting(editorBody);
+            shiftSelecting(editorBody);
         }
     }, 1000);
 }
 
-function shiftSelecting(editorBody, editor){
+function shiftSelecting(editorBody){
   let shiftSelectingActive = false;
   let highlightLock = false;
 
@@ -253,7 +250,7 @@ function shiftSelecting(editorBody, editor){
   }, false);
 }
 
-function mouseSelecting(editorBody, editor){
+function mouseSelecting(editorBody){
     let highlightLock = false;
 
     editorBody.addEventListener("mousedown", function(){
@@ -676,6 +673,7 @@ function extractSolution(root, user){
               text,
               start   : startIndex,
               end     : endIndex,
+              points : actualCategory.points
             };
             (user === 0 ? actualCategory.solutionLec : actualCategory.solutionStud).push(entry);
           }
