@@ -89,9 +89,30 @@ document.getElementById("dom-virtualisation").addEventListener('click', (e) =>{
     e.preventDefault();
 
         const editor = tinymce.get("lecTinyMCE");
-        extractSolution(editor.getBody(), user);
-        renderMarkierungen(user);
+        const isEmpty = document.getElementById("markierungenLec").innerHTML === "";
+        if(isEmpty){
+            clearSolutionList(user);
+            extractSolution(editor.getBody(), user);
+            renderMarkierungen(user);
+        }else{
+            if(alertUndoChanges()){
+                clearSolutionList(user);
+                extractSolution(editor.getBody(), user);
+                renderMarkierungen(user);
+            }else{
+                return;
+            }
+        }
+        
 });
+
+function alertUndoChanges(){
+    if(confirm("Modifizierte Bepunktung geht verloren.")){
+        return true;
+    }else{
+        return false;
+    }
+}
 
 document.getElementById("dom-virtualisationStud").addEventListener('click', (e) =>{
     e.preventDefault();
@@ -652,7 +673,6 @@ function clearSolutionList(user){
 //Bewertung
 
 function extractSolution(root, user){ 
-    //clearSolutionList(user);
     console.log("trig")
 
   const pos = {count:0};
