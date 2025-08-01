@@ -502,7 +502,7 @@ function extractLabeledText(span) {
         }
     });
 
-    return result.replace(/^\[|\]$/g, "").trim();
+    return result.replace(/^\[|\]$/g, "");
 }
 
 function isSelectionBetweenBracketAndSub() {
@@ -914,7 +914,7 @@ function renderMarkierungen(user) {
 
         // Anzeige
         const textSpan = document.createElement("span");
-        textSpan.textContent = mark.text;
+        textSpan.textContent = `"${mark.text}"`
         markDiv.appendChild(textSpan);
 
         // Input für Punkte
@@ -941,12 +941,12 @@ function renderMarkierungen(user) {
       });
       }else{
         cat.solutionStud.forEach((mark) => {
-            const markDiv = document.createElement("div");
+        const markDiv = document.createElement("div");
         markDiv.style.marginBottom = "8px";
 
         // Anzeige
         const textSpan = document.createElement("span");
-        textSpan.textContent = mark.text;
+        textSpan.textContent = `"${mark.text}"`
         markDiv.appendChild(textSpan);
         col.appendChild(markDiv);
         })
