@@ -17,6 +17,9 @@ let markingFlag = 0;
 let deleteMode = false;
 let user = 0;
 let tolerance = 0;
+let modi = 0;
+let tolerancePointsValue = 0;
+let incorrectAssignValue = 0;
 
 
     // Starte die Initialisierung nach DOM-Load
@@ -106,13 +109,6 @@ document.getElementById("dom-virtualisation").addEventListener('click', (e) =>{
         
 });
 
-function alertUndoChanges(){
-    if(confirm("Modifizierte Bepunktung geht verloren.")){
-        return true;
-    }else{
-        return false;
-    }
-}
 
 document.getElementById("dom-virtualisationStud").addEventListener('click', (e) =>{
     e.preventDefault();
@@ -121,6 +117,91 @@ document.getElementById("dom-virtualisationStud").addEventListener('click', (e) 
         extractSolution(body, user);
         renderMarkierungen(user);
 });
+
+document.getElementById('evaModis').addEventListener('change', (e) =>{
+    e.preventDefault();
+    const modisSetup = document.querySelector(".modisSetup");
+    removeAllChildNodes(modisSetup);
+
+    function setupTolerance (){
+        const div = document.createElement("div");
+        const tolerancePointsLabel = document.createElement("label");
+        tolerancePointsLabel.textContent ="Bepunktung bei Markierungen im Toleranzbereich: ";
+        const tolerancePointsInput = document.createElement("input");
+        tolerancePointsInput.type = "number";
+        tolerancePointsInput.step = 0.1;
+        tolerancePointsInput.min = 0;
+        tolerancePointsInput.max = 0.9;
+        div.appendChild(tolerancePointsLabel);
+        div.appendChild(tolerancePointsInput);
+        document.querySelector(".modisSetup").appendChild(div);
+
+        tolerancePointsInput.addEventListener("input", (e) =>{
+            tolerancePointsValue = parseFloat(e.target.value);
+        })
+        
+    }
+
+    function setupIncorrectAssign(){
+        const div = document.createElement("div");
+        const incorrectAssignPointsLabel = document.createElement("label");
+        incorrectAssignPointsLabel.textContent ="Bepunktung bei Markierungen mit falscher Zuweisung: ";
+        const incorrectAssignPointsInput = document.createElement("input");
+        incorrectAssignPointsInput.type = "number";
+        incorrectAssignPointsInput.step = 0.1;
+        incorrectAssignPointsInput.min = 0;
+        incorrectAssignPointsInput.max = 0.9;
+        div.appendChild(incorrectAssignPointsLabel);
+        div.appendChild(incorrectAssignPointsInput);
+        document.querySelector(".modisSetup").appendChild(div);
+
+        incorrectAssignPointsInput.addEventListener("input", (e) =>{
+            incorrectAssignValue = parseFloat(e.target.value);
+        })
+    }
+
+    function resetSetupValues(){
+        incorrectAssignValue = 0;
+        tolerancePointsValue = 0;
+    }
+
+    if(e.target.value === "tolerance-range"){
+        console.log(1);
+        resetSetupValues();
+        setupTolerance();
+        modi = 1;   
+    }else if(e.target.value === "incorrect-assignment"){
+    console.log(2);
+        setupIncorrectAssign();
+        resetSetupValues();
+        modi = 2;
+    }else if(e.target.value === "all"){
+        console.log(3);
+        resetSetupValues();
+        setupTolerance();
+        setupIncorrectAssign();
+        modi = 3;  
+    }else{
+        console.log(0);
+        resetSetupValues();
+        modi = 0;  
+    }
+})
+
+
+function removeAllChildNodes(parent) {
+    while (parent.firstChild) {
+        parent.removeChild(parent.firstChild);
+    }
+}
+
+function alertUndoChanges(){
+    if(confirm("Modifizierte Bepunktung geht verloren.")){
+        return true;
+    }else{
+        return false;
+    }
+}
 
 function deleteModeTrigger(){
         deleteMode = !deleteMode;
@@ -672,8 +753,7 @@ function clearSolutionList(user){
 
 //Bewertung
 
-function extractSolution(root, user){ 
-    console.log("trig")
+function extractSolution(root, user){
 
   const pos = {count:0};
 
@@ -874,20 +954,6 @@ function domTreeVirtualisation(node){
 
 //Auflistung aller Markierungen
 
-function printMarkings(user){
-    categories.forEach(category => category.solutionLec.forEach(e => console.log(e.text)));
-}
-
-// wrapper Function für Markierungen
-function wrapperMarkierung(element){
-    let
-} 
-
-function allMarkings(user){
-    user === 0 ? renderMarkierungenLec() : renderMarkierungenStud();
-}
-
-
 function renderMarkierungen(user) {
     let container;
 
@@ -935,6 +1001,7 @@ function renderMarkierungen(user) {
           input.value = cat.points;
           mark.points = cat.points;
         });
+
         markDiv.appendChild(resetBtn);
 
         col.appendChild(markDiv);

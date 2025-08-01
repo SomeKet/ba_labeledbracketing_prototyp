@@ -13,6 +13,17 @@
 
     <div id="lecturerView">
         <h2>Lehrperson</h2>
+        <div class="modisList">
+            <label for="modis" style="font-size: large;">Wähle ein Bewertungsmodus:</label>
+            <select name="modis" id="evaModis">
+                <option value="direct-hits">Nur Volltreffer</option>
+                <option value="tolerance-range">Volltreffer & Toleranzbereich</option>
+                <option value="incorrect-assignment">Volltreffer & Falsche Zuweisung</option>
+                <option value="all">Alle Modis</option>
+            </select>
+            <div class="modisSetup" style="flex-direction: row;"></div>
+        </div>
+
         <div id="tinymce-container">
             <textarea id="lecTinyMCE">Der junge Lehrer erklärt den Schülern geduldig die Grammatik.
             </textarea>
