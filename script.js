@@ -16,10 +16,10 @@ const labeledMarker = {label:"", color:""};
 let markingFlag = 0;
 let deleteMode = false;
 let user = 0;
-let tolerance = 0;
 let modi = 0;
 let tolerancePointsValue = 0;
 let incorrectAssignValue = 0;
+let toleranceValue = 0;
 
 
     // Starte die Initialisierung nach DOM-Load
@@ -42,10 +42,13 @@ document.getElementById("goToStudent").addEventListener('click', (e)=>{
     e.preventDefault();
 
     const editor = tinymce.get("lecTinyMCE");
-    //extractSolution(editor.getBody(), user);
+    
+    if(document.getElementById("markierungenLec").innerHTML === ""){
+        extractSolution(editor.getBody(), user);
+    }
+    
     
     user = 1;
-    tolerance = document.getElementById('toleranz').value === "" ? 0 : document.getElementById('toleranz').value;
     document.getElementById('lecturerView').hidden = true;
     document.getElementById('studentView').hidden = false;
     prepStudButtons();
@@ -62,7 +65,7 @@ document.getElementById("studEingabe").addEventListener('click', (e)=>{
 
     const body = document.getElementById('studentExercise');
     extractSolution(body, 1);
-    const report = evaluate(categories, tolerance)
+    const report = evaluate(categories, toleranceValue)
     const k = filterEvaluation(report);
     console.log(k);
     console.log(report);
@@ -125,6 +128,16 @@ document.getElementById('evaModis').addEventListener('change', (e) =>{
 
     function setupTolerance (){
         const div = document.createElement("div");
+
+        const tolerance = document.createElement("input");
+        tolerance.style = "margin-left: 5px; width:120px;";
+        tolerance.placeholder ="Toleranzbereich"
+        tolerance.textcontent = "Toleranz";
+        tolerance.type = "number";
+        tolerance.min = 1;
+        tolerance.max = 10;
+
+
         const tolerancePointsLabel = document.createElement("label");
         tolerancePointsLabel.textContent ="Bepunktung bei Markierungen im Toleranzbereich: ";
         const tolerancePointsInput = document.createElement("input");
@@ -132,12 +145,18 @@ document.getElementById('evaModis').addEventListener('change', (e) =>{
         tolerancePointsInput.step = 0.1;
         tolerancePointsInput.min = 0;
         tolerancePointsInput.max = 0.9;
+
         div.appendChild(tolerancePointsLabel);
         div.appendChild(tolerancePointsInput);
+        div.appendChild(tolerance);
         document.querySelector(".modisSetup").appendChild(div);
 
         tolerancePointsInput.addEventListener("input", (e) =>{
             tolerancePointsValue = parseFloat(e.target.value);
+        })
+
+        tolerance.addEventListener("input", (e) =>{
+            toleranceValue = parseInt(e.target.value);
         })
         
     }
@@ -163,6 +182,7 @@ document.getElementById('evaModis').addEventListener('change', (e) =>{
     function resetSetupValues(){
         incorrectAssignValue = 0;
         tolerancePointsValue = 0;
+        toleranceValue = 0;
     }
 
     if(e.target.value === "tolerance-range"){
@@ -811,7 +831,7 @@ function extractSolution(root, user){
  * Sz2: Bei tolerance > 0 -> nur Start/End in ±tolerance; Text wird NICHT verglichen
  *
  */
-function evaluate(categories, tolerance = 0) {
+function evaluate(categories, toleranceValue) {
   // true, wenn zwei Markierungen als Treffer gelten
   const isMatch = (lec, stud, tol) => {
     const toleranzOk =
@@ -837,7 +857,7 @@ function evaluate(categories, tolerance = 0) {
     //fehlende Markierungen 
     cat.solutionLec.forEach(lec => {
       const idx = cat.solutionStud.findIndex(
-        (st, i) => !usedStud.has(i) && isMatch(lec, st, tolerance)
+        (st, i) => !usedStud.has(i) && isMatch(lec, st, toleranceValue)
       );
       if (idx !== -1) {
         usedStud.add(idx);
@@ -862,7 +882,7 @@ function evaluate(categories, tolerance = 0) {
 }
 
 function printEvaluation(){
-    const report = evaluate(categories, tolerance);
+    const report = evaluate(categories, toleranceValue);
 
     let wrongCounter, missingCounter;
     let tip;
