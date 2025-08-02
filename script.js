@@ -117,8 +117,11 @@ document.getElementById("dom-virtualisationStud").addEventListener('click', (e) 
     e.preventDefault();
 
         const body = document.getElementById("studentExercise");
-        extractSolution(body, user);
-        renderMarkierungen(user);
+ 
+            clearSolutionList(user);
+            extractSolution(body, user);
+            renderMarkierungen(user);
+        
 });
 
 document.getElementById('evaModis').addEventListener('change', (e) =>{
