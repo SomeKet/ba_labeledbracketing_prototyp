@@ -4,15 +4,15 @@ tinymce.init({
     content_css: '/style.css',
     //entity_encoding: 'raw', /* wenn aktiviert: NICHT anzeigen von &nbsp; */
     plugins: [
-      // Core editing features
-      'anchor', 'charmap', 'codesample', 'emoticons', 'lists', 'searchreplace', 'table', 'visualblocks', 'wordcount','save', 'code'
-],
+        // Core editing features
+        'anchor', 'charmap', 'codesample', 'emoticons', 'lists', 'searchreplace', 'table', 'visualblocks', 'wordcount', 'save', 'code'
+    ],
     paste_as_text: true, /************* WICHTIG FÜR only <p></p> durch pasten von Text *******************/
     toolbar: 'abc | code | save | highlight | textmarkierung | tagger | undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
-}); 
+});
 
 let categories = [];
-const labeledMarker = {label:"", color:""};
+const labeledMarker = { label: "", color: "" };
 let markingFlag = 0;
 let deleteMode = false;
 let user = 0;
@@ -22,13 +22,13 @@ let incorrectAssignValue = 0;
 let toleranceValue = 0;
 
 
-    // Starte die Initialisierung nach DOM-Load
-document.addEventListener('DOMContentLoaded', function(){
+// Starte die Initialisierung nach DOM-Load
+document.addEventListener('DOMContentLoaded', function () {
     setTimeout(initializeHighlighter, 500);
 
-    let btn1 = {name:"Satz", label:"S", color:"red", extra:"Satz", points:1};
-    let btn2 = {name:"Nominalphrase", label:"NP", color:"green", extra:"Nominalphrase", points:1};
-    let btn3 = {name:"Verbalphrase", label:"VP", color:"blue", extra:"Verbalphrase", points:2};
+    let btn1 = { name: "Satz", label: "S", color: "red", extra: "Satz", points: 1 };
+    let btn2 = { name: "Nominalphrase", label: "NP", color: "green", extra: "Nominalphrase", points: 1 };
+    let btn3 = { name: "Verbalphrase", label: "VP", color: "blue", extra: "Verbalphrase", points: 2 };
     //let btn4 = {name:"Verb", label:"v", color:"orange", extra:"Verb"};
 
     let btnlist = [btn1, btn2, btn3];
@@ -38,26 +38,26 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 
 
-document.getElementById("goToStudent").addEventListener('click', (e)=>{
+document.getElementById("goToStudent").addEventListener('click', (e) => {
     e.preventDefault();
 
     const editor = tinymce.get("lecTinyMCE");
-    
-    if(document.getElementById("markierungenLec").innerHTML === ""){
+
+    if (document.getElementById("markierungenLec").innerHTML === "") {
         extractSolution(editor.getBody(), user);
     }
-    
-    
+
+
     user = 1;
     document.getElementById('lecturerView').hidden = true;
     document.getElementById('studentView').hidden = false;
     prepStudButtons();
     prepStudExercise();
     initializeHighlighter();
-    
+
 })
 
-document.getElementById("studEingabe").addEventListener('click', (e)=>{
+document.getElementById("studEingabe").addEventListener('click', (e) => {
     e.preventDefault();
 
     categories.forEach(category => category.solutionStud = []);
@@ -82,59 +82,63 @@ document.getElementById('categoryForm').addEventListener('submit', (e) => {
     const extra = data.get("extra");
     const points = data.get("points");
 
-    if(!checkCategoryDuplette(name, label, color)){
-        return;    
-    }else{
+    if (!checkCategoryDuplette(name, label, color)) {
+        return;
+    } else {
         createCategory(name, label, color, extra, points);
         document.getElementById('categoryForm').reset();
     }
 
 })
 
-document.getElementById("dom-virtualisation").addEventListener('click', (e) =>{
+document.getElementById("dom-virtualisation").addEventListener('click', (e) => {
     e.preventDefault();
 
-        const editor = tinymce.get("lecTinyMCE");
-        const isEmpty = document.getElementById("markierungenLec").innerHTML === "";
-        if(isEmpty){
+    document.getElementById("dom-virtualisation").textContent = "Übersicht aktualisieren"
+
+    const editor = tinymce.get("lecTinyMCE");
+    const isEmpty = document.getElementById("markierungenLec").innerHTML === "";
+    if (isEmpty) {
+        clearSolutionList(user);
+        extractSolution(editor.getBody(), user);
+        renderMarkierungen(user);
+    } else {
+        if (alertUndoChanges()) {
             clearSolutionList(user);
             extractSolution(editor.getBody(), user);
             renderMarkierungen(user);
-        }else{
-            if(alertUndoChanges()){
-                clearSolutionList(user);
-                extractSolution(editor.getBody(), user);
-                renderMarkierungen(user);
-            }else{
-                return;
-            }
+        } else {
+            return;
         }
-        
+    }
+
 });
 
 
-document.getElementById("dom-virtualisationStud").addEventListener('click', (e) =>{
+document.getElementById("dom-virtualisationStud").addEventListener('click', (e) => {
     e.preventDefault();
 
-        const body = document.getElementById("studentExercise");
- 
-            clearSolutionList(user);
-            extractSolution(body, user);
-            renderMarkierungen(user);
-        
+    document.getElementById("dom-virtualisationStud").textContent = "Übersicht aktualisieren"
+
+    const body = document.getElementById("studentExercise");
+
+    clearSolutionList(user);
+    extractSolution(body, user);
+    renderMarkierungen(user);
+
 });
 
-document.getElementById('evaModis').addEventListener('change', (e) =>{
+document.getElementById('evaModis').addEventListener('change', (e) => {
     e.preventDefault();
     const modisSetup = document.querySelector(".modisSetup");
     removeAllChildNodes(modisSetup);
 
-    function setupTolerance (){
+    function setupTolerance() {
         const div = document.createElement("div");
 
         const tolerance = document.createElement("input");
         tolerance.style = "margin-left: 5px; width:120px;";
-        tolerance.placeholder ="Toleranzbereich"
+        tolerance.placeholder = "Toleranzbereich"
         tolerance.textcontent = "Toleranz";
         tolerance.type = "number";
         tolerance.min = 1;
@@ -142,7 +146,7 @@ document.getElementById('evaModis').addEventListener('change', (e) =>{
 
 
         const tolerancePointsLabel = document.createElement("label");
-        tolerancePointsLabel.textContent ="Bepunktung bei Markierungen im Toleranzbereich: ";
+        tolerancePointsLabel.textContent = "Bepunktung bei Markierungen im Toleranzbereich: ";
         const tolerancePointsInput = document.createElement("input");
         tolerancePointsInput.type = "number";
         tolerancePointsInput.step = 0.1;
@@ -154,20 +158,20 @@ document.getElementById('evaModis').addEventListener('change', (e) =>{
         div.appendChild(tolerance);
         document.querySelector(".modisSetup").appendChild(div);
 
-        tolerancePointsInput.addEventListener("input", (e) =>{
+        tolerancePointsInput.addEventListener("input", (e) => {
             tolerancePointsValue = parseFloat(e.target.value);
         })
 
-        tolerance.addEventListener("input", (e) =>{
+        tolerance.addEventListener("input", (e) => {
             toleranceValue = parseInt(e.target.value);
         })
-        
+
     }
 
-    function setupIncorrectAssign(){
+    function setupIncorrectAssign() {
         const div = document.createElement("div");
         const incorrectAssignPointsLabel = document.createElement("label");
-        incorrectAssignPointsLabel.textContent ="Bepunktung bei Markierungen mit falscher Zuweisung: ";
+        incorrectAssignPointsLabel.textContent = "Bepunktung bei Markierungen mit falscher Zuweisung: ";
         const incorrectAssignPointsInput = document.createElement("input");
         incorrectAssignPointsInput.type = "number";
         incorrectAssignPointsInput.step = 0.1;
@@ -177,37 +181,37 @@ document.getElementById('evaModis').addEventListener('change', (e) =>{
         div.appendChild(incorrectAssignPointsInput);
         document.querySelector(".modisSetup").appendChild(div);
 
-        incorrectAssignPointsInput.addEventListener("input", (e) =>{
+        incorrectAssignPointsInput.addEventListener("input", (e) => {
             incorrectAssignValue = parseFloat(e.target.value);
         })
     }
 
-    function resetSetupValues(){
+    function resetSetupValues() {
         incorrectAssignValue = 0;
         tolerancePointsValue = 0;
         toleranceValue = 0;
     }
 
-    if(e.target.value === "tolerance-range"){
+    if (e.target.value === "tolerance-range") {
         console.log(1);
         resetSetupValues();
         setupTolerance();
-        modi = 1;   
-    }else if(e.target.value === "incorrect-assignment"){
-    console.log(2);
+        modi = 1;
+    } else if (e.target.value === "incorrect-assignment") {
+        console.log(2);
         setupIncorrectAssign();
         resetSetupValues();
         modi = 2;
-    }else if(e.target.value === "all"){
+    } else if (e.target.value === "all") {
         console.log(3);
         resetSetupValues();
         setupTolerance();
         setupIncorrectAssign();
-        modi = 3;  
-    }else{
+        modi = 3;
+    } else {
         console.log(0);
         resetSetupValues();
-        modi = 0;  
+        modi = 0;
     }
 })
 
@@ -218,54 +222,54 @@ function removeAllChildNodes(parent) {
     }
 }
 
-function alertUndoChanges(){
-    if(confirm("Modifizierte Bepunktung geht verloren.")){
+function alertUndoChanges() {
+    if (confirm("Modifizierte Bepunktung geht verloren.")) {
         return true;
-    }else{
+    } else {
         return false;
     }
 }
 
-function deleteModeTrigger(){
-        deleteMode = !deleteMode;
-        if(user === 0){
-            const deleteBtn = document.getElementById("deleteModeBtn");
+function deleteModeTrigger() {
+    deleteMode = !deleteMode;
+    if (user === 0) {
+        const deleteBtn = document.getElementById("deleteModeBtn");
 
-            deleteBtn.textContent = deleteMode ? "Lösch-Modus beenden" : "Markierung löschen";
-            deleteBtn.style.background = deleteMode ? "darkred" : "";
-        }else{
-            const deleteBtn = document.getElementById("deleteModeBtnStud");
-            deleteBtn.textContent = deleteMode ? "Lösch-Modus beenden" : "Markierung löschen";
-            deleteBtn.style.background = deleteMode ? "darkred" : "";
-        }
-        
+        deleteBtn.textContent = deleteMode ? "Lösch-Modus beenden" : "Markierung löschen";
+        deleteBtn.style.background = deleteMode ? "darkred" : "";
+    } else {
+        const deleteBtn = document.getElementById("deleteModeBtnStud");
+        deleteBtn.textContent = deleteMode ? "Lösch-Modus beenden" : "Markierung löschen";
+        deleteBtn.style.background = deleteMode ? "darkred" : "";
+    }
 
-        if(deleteMode){
-            document.querySelectorAll('.category-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.style.opacity="100%";
-            });
 
-            labeledMarker.color = null;
-            labeledMarker.label = null;
-            tinymce.get('lecTinyMCE').contentDocument.body.style.caretColor = "";
-        }
+    if (deleteMode) {
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.style.opacity = "100%";
+        });
+
+        labeledMarker.color = null;
+        labeledMarker.label = null;
+        tinymce.get('lecTinyMCE').contentDocument.body.style.caretColor = "";
+    }
 }
 
 
-function createCategory(name, label, color, extra, points){
-    categories.push({name, label, color, points, extra,solutionLec:[], solutionStud:[]});
+function createCategory(name, label, color, extra, points) {
+    categories.push({ name, label, color, points, extra, solutionLec: [], solutionStud: [] });
 
     let btn = document.createElement("button");
-    btn.className=`category-btn`;
+    btn.className = `category-btn`;
     let textNode = document.createTextNode(name);
     btn.appendChild(textNode);
     btn.style.background = color;
-    btn.style.marginRight= "5px";
+    btn.style.marginRight = "5px";
 
     document.getElementById("lecButtons").appendChild(btn);
 
-    btn.addEventListener('click', function (){
+    btn.addEventListener('click', function () {
         const deacBtn = document.querySelectorAll('.active');
         const isActive = btn.classList.contains('active');
 
@@ -274,10 +278,10 @@ function createCategory(name, label, color, extra, points){
 
         deacBtn.forEach(btn => {
             btn.classList.remove('active');
-            btn.style.opacity="100%";
+            btn.style.opacity = "100%";
         });
 
-        if(deleteMode){
+        if (deleteMode) {
             deleteModeTrigger();
         }
         categoryTrigger(!isActive, btn);
@@ -285,38 +289,38 @@ function createCategory(name, label, color, extra, points){
     })
 }
 
-function categoryTrigger(isActive, btn){
-    if(isActive){
+function categoryTrigger(isActive, btn) {
+    if (isActive) {
         btn.classList.add('active');
         tinymce.get('lecTinyMCE').contentDocument.body.style.caretColor = labeledMarker.color;
-        btn.style.opacity="50%";
-    }else{
+        btn.style.opacity = "50%";
+    } else {
         btn.classList.remove('active');
         labeledMarker.color = null;
         labeledMarker.label = null;
         tinymce.get('lecTinyMCE').contentDocument.body.style.caretColor = "";
-        btn.style.opacity="100%";
+        btn.style.opacity = "100%";
     }
 }
 
-function checkCategoryDuplette(name, label, color){
+function checkCategoryDuplette(name, label, color) {
     const exists = categories.some(category => {
-        if(category.name.toLowerCase() === name.toLowerCase()){
+        if (category.name.toLowerCase() === name.toLowerCase()) {
             alert("Bezeichnung existiert bereits");
             return true;
         }
-        else if(category.label.toLowerCase() === label.toLowerCase()){
+        else if (category.label.toLowerCase() === label.toLowerCase()) {
             alert("Label existiert bereits");
             return true;
         }
-        else if(category.color.toLowerCase() === color.toLowerCase()){
+        else if (category.color.toLowerCase() === color.toLowerCase()) {
             alert("Farbe existiert bereits");
             return true;
         }
         return false;
     });
-    
-    if(!exists){
+
+    if (!exists) {
         alert("Kategorie wurde gespeichert");
     }
     return !exists;
@@ -326,70 +330,70 @@ function initializeHighlighter() {
     initHighlightView()
 }
 
-function viewFocus(){
-    if(user === 0){
+function viewFocus() {
+    if (user === 0) {
         return tinymce.get('lecTinyMCE');
-    }else{
+    } else {
         return document.getElementById('studentExercise');
     }
 }
 
-function initHighlightView(){
+function initHighlightView() {
     const checkEditor = setInterval(() => {
         const editor = viewFocus();
-        
-        let editorBody = null;
-        user === 0 ? editorBody = editor.getBody() : editorBody = editor; 
 
-        if(editor && editorBody){
+        let editorBody = null;
+        user === 0 ? editorBody = editor.getBody() : editorBody = editor;
+
+        if (editor && editorBody) {
             clearInterval(checkEditor);
             console.log("Highlighter initialisiert");
-        
-            editorBody.addEventListener("click", function(e) {
-                if(deleteMode && e.target.closest('span[data-label]')){
+
+            editorBody.addEventListener("click", function (e) {
+                if (deleteMode && e.target.closest('span[data-label]')) {
                     e.preventDefault();
                     e.stopPropagation();
                     removeHighlight(e.target.closest('span[data-label]'));
                 }
             }, true);
-            
+
             mouseSelecting(editorBody);
             shiftSelecting(editorBody);
         }
     }, 1000);
 }
 
-function shiftSelecting(editorBody){
-  let shiftSelectingActive = false;
-  let highlightLock = false;
-
-  editorBody.addEventListener("keydown", e =>{
-    if(e.shiftKey){
-      shiftSelectingActive = true;
-    }
-  }, false);
-
-  editorBody.addEventListener("keyup", e => {
-    if (e.key === "Shift" && shiftSelectingActive){
-      if (labeledMarker.label && labeledMarker.color){
-        if (!highlightLock) {
-          highlightLock = true;
-          setTimeout(() => {
-            highlightSelection();
-            collapseSelection();
-            setTimeout(() => highlightLock = false, 200);
-          }, 10);
-        }
-      }
-      shiftSelectingActive = false;
-    }
-  }, false);
-}
-
-function mouseSelecting(editorBody){
+function shiftSelecting(editorBody) {
+    let shiftSelectingActive = false;
     let highlightLock = false;
 
-    editorBody.addEventListener("mousedown", function(){
+    editorBody.addEventListener("keydown", e => {
+        if (e.shiftKey) {
+            shiftSelectingActive = true;
+        }
+    }, false);
+
+    editorBody.addEventListener("keyup", e => {
+        if (e.key === "Shift" && shiftSelectingActive) {
+            if (labeledMarker.label && labeledMarker.color) {
+                if (!highlightLock) {
+                    highlightLock = true;
+                    setTimeout(() => {
+                        highlightSelection();
+                        collapseSelection();
+                        setTimeout(() => highlightLock = false, 200);
+                    }, 10);
+                }
+            }
+            shiftSelectingActive = false;
+        }
+    }, false);
+}
+
+function mouseSelecting(editorBody) {
+    let highlightLock = false;
+
+    editorBody.addEventListener("mousedown", function () {
         markingFlag = 0;
     }, false)
 
@@ -398,24 +402,24 @@ function mouseSelecting(editorBody){
     }, false);
 
     editorBody.addEventListener("mouseup", function () {
-        if(markingFlag === 1 && labeledMarker.label && labeledMarker.color) {
-            if(highlightLock) return;
+        if (markingFlag === 1 && labeledMarker.label && labeledMarker.color) {
+            if (highlightLock) return;
             highlightLock = true;
             setTimeout(() => {
                 highlightSelection();
                 collapseSelection();
-                setTimeout(()=> 
+                setTimeout(() =>
                     highlightLock = false, 200);
             }, 10); // Kurze Verzögerung für saubere Selektion
         }
     }, false);
 }
 
-function collapseSelection(){
-    if(user === 0){
+function collapseSelection() {
+    if (user === 0) {
         const editor = tinymce.get("lecTinyMCE")
         editor.selection.collapse();
-    }else{
+    } else {
         const selection = window.getSelection();
         const rng = selection.getRangeAt(0);
         rng.collapse(false);
@@ -440,40 +444,40 @@ Bedingungen:
 - NOPE bei doppel Markierung, Markierung entfernen ?! Wäre nicht schlecht
     */
 
-function highlightSelection(){
+function highlightSelection() {
     let editor = null;
     let selection = null;
     let rng = null;
 
-    if(user === 0){
+    if (user === 0) {
         editor = tinymce.get("lecTinyMCE");
         selection = editor.selection;
         rng = selection.getRng();
 
-        if(selection.getNode().nodeName === "DIV"){
+        if (selection.getNode().nodeName === "DIV") {
             alert("Block-Element");
-        return;
+            return;
         }
 
-    }else{
+    } else {
         editor = document.getElementById('studentExercise');
         selection = window.getSelection();
         rng = selection.getRangeAt(0);
     }
-    
-    if(rng.toString().trim() === ""){
+
+    if (rng.toString().trim() === "") {
         console.log("leerbereich");
         return;
     }
 
-    if(isSelectionBetweenBracketAndSub()){
+    if (isSelectionBetweenBracketAndSub()) {
         console.log("bracket sub")
         return;
     }
 
-    if(bracketCounter(rng.toString())){
+    if (bracketCounter(rng.toString())) {
         wrapping(rng);
-    }else{
+    } else {
         console.log("überlappunt")
         return;
     }
@@ -484,24 +488,24 @@ negativ = überlappung
 positiv = überlappung
 0 = korrekt
 */
-function bracketCounter(str){
-  let depth = 0;
+function bracketCounter(str) {
+    let depth = 0;
 
-  for(const ch of str){
-    if(ch === '[') {
-      depth++;             
-    }else if(ch === ']'){
-      depth--;             
+    for (const ch of str) {
+        if (ch === '[') {
+            depth++;
+        } else if (ch === ']') {
+            depth--;
 
-      if(depth < 0){ 
-        return false;
-      }
+            if (depth < 0) {
+                return false;
+            }
+        }
     }
-  }
-  return depth === 0;
+    return depth === 0;
 }
 
-function wrapping(rng){
+function wrapping(rng) {
     const text = rng.extractContents();
 
     const wrapperSpan = document.createElement("span");
@@ -530,7 +534,7 @@ function wrapping(rng){
     rng.insertNode(wrapperSpan);
 }
 
-function makeUnselectable(el){
+function makeUnselectable(el) {
     el.style.pointerEvents = 'none';
     el.style.userSelect = 'none';
 
@@ -544,19 +548,19 @@ function makeUnselectable(el){
 function removeHighlight(span) {
     const editor = tinymce.get("lecTinyMCE");
 
-    if(!span.hasAttribute("data-label")) return;
+    if (!span.hasAttribute("data-label")) return;
 
     const fragment = document.createDocumentFragment();
 
     span.childNodes.forEach(node => {
-        if(node.nodeType === Node.TEXT_NODE) {
+        if (node.nodeType === Node.TEXT_NODE) {
             // Entferne Klammern
             let text = node.textContent;
             text = text.replace("[", "").replace("]", "");
             if (text.trim()) {
                 fragment.appendChild(document.createTextNode(text));
             }
-        }else if (node.nodeName !== "SUB") {
+        } else if (node.nodeName !== "SUB") {
             // Behalte alles, was kein <sub> ist
             fragment.appendChild(node.cloneNode(true));
         }
@@ -571,37 +575,37 @@ function removeHighlight(span) {
 }
 
 
-function traverseTree1(element, user){
-    if(element.nodeType !== Node.ELEMENT_NODE)return;
+function traverseTree1(element, user) {
+    if (element.nodeType !== Node.ELEMENT_NODE) return;
 
-    if(element.nodeName === "SPAN" && element.dataset.label){
+    if (element.nodeName === "SPAN" && element.dataset.label) {
         const label = element.dataset.label;
         const text = extractLabeledText(element);
 
-        if(!text || text.trim() === "")return;
+        if (!text || text.trim() === "") return;
 
-        if(user == 0){
+        if (user == 0) {
             console.log("lec Eingaben")
             categories.filter(category => category.label === label)
-            .forEach(category => category.solutionLec.push(text));
-        }else{
+                .forEach(category => category.solutionLec.push(text));
+        } else {
             console.log("stud Eigaben");
             categories.filter(category => category.label === label)
-            .forEach(category => category.solutionStud.push(text));
+                .forEach(category => category.solutionStud.push(text));
         }
-        
+
     }
-    element.childNodes.forEach(child => traverseTree(child,user));
+    element.childNodes.forEach(child => traverseTree(child, user));
 }
 
 function extractLabeledText(span) {
     let result = "";
 
     span.childNodes.forEach(node => {
-        if(node.nodeType === Node.ELEMENT_NODE && node.tagName === "SUB") return;
-        if(node.nodeType === Node.TEXT_NODE) {
+        if (node.nodeType === Node.ELEMENT_NODE && node.tagName === "SUB") return;
+        if (node.nodeType === Node.TEXT_NODE) {
             result += node.nodeValue;
-        }else if(node.nodeType === Node.ELEMENT_NODE) {
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
             result += extractLabeledText(node);
         }
     });
@@ -611,7 +615,7 @@ function extractLabeledText(span) {
 
 function isSelectionBetweenBracketAndSub() {
     let rng = null;
-    
+
     if (user === 0) {
         rng = tinymce.activeEditor.selection.getRng();
     } else {
@@ -628,11 +632,11 @@ function isSelectionBetweenBracketAndSub() {
     console.log("Text:", container.nodeValue);
 
     // Fall 1: Wir sind in einem TextNode wie "[" direkt vor <sub>
-    if(container.nodeType === Node.TEXT_NODE) {
+    if (container.nodeType === Node.TEXT_NODE) {
         const text = container.nodeValue;
 
         // Prüfung: Cursor ganz am Ende des Texts, und Text ist nur "["
-         if (offset > 0 && text[offset - 1] === "[") {
+        if (offset > 0 && text[offset - 1] === "[") {
             const next = container.nextSibling;
             if (next && next.nodeName === "SUB") {
                 return true;
@@ -642,7 +646,7 @@ function isSelectionBetweenBracketAndSub() {
     return false;
 }
 
-function prepStudButtons(){
+function prepStudButtons() {
     const bar = document.getElementById("studButtons");
 
     categories.forEach(category => {
@@ -650,63 +654,63 @@ function prepStudButtons(){
         btn.className = "category-btn";
         btn.style.background = category.color;
         let text = document.createTextNode(category.name);
-        btn.style.marginRight= "5px";
+        btn.style.marginRight = "5px";
         btn.appendChild(text);
         bar.appendChild(btn);
 
-        btn.addEventListener('click', function (){
-        const deacBtn = document.querySelectorAll('.active');
-        const isActive = btn.classList.contains('active');
+        btn.addEventListener('click', function () {
+            const deacBtn = document.querySelectorAll('.active');
+            const isActive = btn.classList.contains('active');
 
-        labeledMarker.label = category.label;
-        labeledMarker.color = category.color;
+            labeledMarker.label = category.label;
+            labeledMarker.color = category.color;
 
-        deacBtn.forEach(btn => {
-            btn.classList.remove('active');
-            btn.style.opacity="100%";
-        });
+            deacBtn.forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.opacity = "100%";
+            });
 
-        if(deleteMode){
-            deleteModeTrigger();
-        }
-        categoryTrigger(!isActive, btn);
-        console.log(labeledMarker);
+            if (deleteMode) {
+                deleteModeTrigger();
+            }
+            categoryTrigger(!isActive, btn);
+            console.log(labeledMarker);
         })
     })
 }
 
-function prepStudExercise(){
+function prepStudExercise() {
     let exerciseText = collectCleanText(tinymce.get("lecTinyMCE").getBody());
     let exercsise = document.getElementById('studentExercise');
     exercsise.innerHTML = exerciseText;
 }
 
-function collectCleanText(root){
-    let result ="";
-    const singleTags= new Set(['BR']);
+function collectCleanText(root) {
+    let result = "";
+    const singleTags = new Set(['BR']);
 
-    function traverse(node){
-        
+    function traverse(node) {
+
         //Text übernehmen, ohne Klammern
-        if(node.nodeType === Node.TEXT_NODE){
+        if (node.nodeType === Node.TEXT_NODE) {
             result += node.nodeValue.replace(/\[|\]/g, "");
             return;
         }
 
         //Sub überspringen
-        if(node.nodeType === Node.ELEMENT_NODE && node.tagName === "SUB") return;
+        if (node.nodeType === Node.ELEMENT_NODE && node.tagName === "SUB") return;
 
         //Element Knoten
-        if(node.nodeType === Node.ELEMENT_NODE){
-             //SPAN Element
-            if(node.tagName === "SPAN" && node.hasAttribute("data-label")){
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            //SPAN Element
+            if (node.tagName === "SPAN" && node.hasAttribute("data-label")) {
                 node.childNodes.forEach(traverse);
                 return;
             }
             //Bestimmte SingleTags und dessen Attribute -> SingleTags haben kein />
-            if(singleTags.has(node.tagName)){
+            if (singleTags.has(node.tagName)) {
                 result += `<${node.tagName.toLowerCase()}`;
-                for(const attr of node.attributes){
+                for (const attr of node.attributes) {
                     result += ` ${attr.name}="${attr.value}"`;
                 }
                 result += ">";
@@ -715,7 +719,7 @@ function collectCleanText(root){
 
             //alle anderen Elemente und dessen Attribute und closing Tag
             result += `<${node.tagName.toLowerCase()}`;
-            for(const attr of node.attributes){
+            for (const attr of node.attributes) {
                 result += ` ${attr.name}="${attr.value}"`
             }
             result += ">";
@@ -728,30 +732,30 @@ function collectCleanText(root){
 
 }
 
-function collectCleanText1(element){
+function collectCleanText1(element) {
     let result = "";
     const singleTags = new Set(['BR']);
-    
+
     element.childNodes.forEach(node => {
-        if(node.nodeType === Node.TEXT_NODE){
+        if (node.nodeType === Node.TEXT_NODE) {
             result += node.nodeValue.replace(/\[|\]/g, "");
-        }else if(node.nodeType === Node.ELEMENT_NODE){
-            if(node.tagName === "SUB"){
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.tagName === "SUB") {
                 return;
 
-            }else if(node.tagName === "SPAN" && node.hasAttribute("data-label")){
+            } else if (node.tagName === "SPAN" && node.hasAttribute("data-label")) {
                 result += collectCleanText(node);
 
-            }else if(singleTags.has(node.tagName)){
+            } else if (singleTags.has(node.tagName)) {
                 result += `</${node.tagName.toLowerCase()}>`;
                 result += collectCleanText(node);
 
-            }else{
+            } else {
 
                 result += `<${node.tagName.toLowerCase()}`;
-                
-                if(node.attributes.length > 0){
-                    for(let attr of node.attributes){
+
+                if (node.attributes.length > 0) {
+                    for (let attr of node.attributes) {
                         result += `${attr.name}="${attr.value}"`;
                     }
                 }
@@ -762,13 +766,13 @@ function collectCleanText1(element){
             }
         }
     });
-    
+
     return result;
 }
 
 
-function clearSolutionList(user){
-    user === 0 ? 
+function clearSolutionList(user) {
+    user === 0 ?
         categories.forEach(cat => cat.solutionLec = []) : categories.forEach(cat => cat.solutionStud = []);
 
 }
@@ -776,57 +780,57 @@ function clearSolutionList(user){
 
 //Bewertung
 
-function extractSolution(root, user){
+function extractSolution(root, user) {
 
-  const pos = {count:0};
+    const pos = { count: 0 };
 
-  //hilfsfunktion
-  const addVisible = txt =>
-    (pos.count += txt.replace(/\[|\]/g, "").length);
+    //hilfsfunktion
+    const addVisible = txt =>
+        (pos.count += txt.replace(/\[|\]/g, "").length);
 
-  function traverseTree(node) {
+    function traverseTree(node) {
 
-    /*Text-Knoten */
-    if(node.nodeType === Node.TEXT_NODE){
-      addVisible(node.nodeValue || "");
-      return;
-    }
-
-    if(node.nodeType === Node.ELEMENT_NODE && node.tagName === "SUB") return;
-
-    if(node.nodeType === Node.ELEMENT_NODE){
-      if(node.tagName === "P") pos.count += 1;
-
-      if(node.tagName === "SPAN" && node.dataset.label){
-        const label      = node.dataset.label;
-        const startIndex = pos.count;
-
-        //Inhalt Span
-        node.childNodes.forEach(traverseTree);
-
-        const endIndex  = pos.count - 1;
-        const text      = extractLabeledText(node);
-
-        if(text.trim() !== ""){
-          const actualCategory = categories.find(c => c.label === label);
-          if(actualCategory){
-            const entry = {
-              text,
-              start   : startIndex,
-              end     : endIndex,
-              points : actualCategory.points
-            };
-            (user === 0 ? actualCategory.solutionLec : actualCategory.solutionStud).push(entry);
-          }
+        /*Text-Knoten */
+        if (node.nodeType === Node.TEXT_NODE) {
+            addVisible(node.nodeValue || "");
+            return;
         }
-        return;
-      }
-      //nächstes Element
-      node.childNodes.forEach(traverseTree);
+
+        if (node.nodeType === Node.ELEMENT_NODE && node.tagName === "SUB") return;
+
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.tagName === "P") pos.count += 1;
+
+            if (node.tagName === "SPAN" && node.dataset.label) {
+                const label = node.dataset.label;
+                const startIndex = pos.count;
+
+                //Inhalt Span
+                node.childNodes.forEach(traverseTree);
+
+                const endIndex = pos.count - 1;
+                const text = extractLabeledText(node);
+
+                if (text.trim() !== "") {
+                    const actualCategory = categories.find(c => c.label === label);
+                    if (actualCategory) {
+                        const entry = {
+                            text,
+                            start: startIndex,
+                            end: endIndex,
+                            points: actualCategory.points
+                        };
+                        (user === 0 ? actualCategory.solutionLec : actualCategory.solutionStud).push(entry);
+                    }
+                }
+                return;
+            }
+            //nächstes Element
+            node.childNodes.forEach(traverseTree);
+        }
     }
-  }
-  //Startt
-  traverseTree(root);
+    //Startt
+    traverseTree(root);
 }
 
 /**
@@ -835,56 +839,56 @@ function extractSolution(root, user){
  *
  */
 function evaluate(categories, toleranceValue) {
-  // true, wenn zwei Markierungen als Treffer gelten
-  const isMatch = (lec, stud, tol) => {
-    const toleranzOk =
-      Math.abs(lec.start - stud.start) <= tol &&
-      Math.abs(lec.end   - stud.end  ) <= tol;
+    // true, wenn zwei Markierungen als Treffer gelten
+    const isMatch = (lec, stud, tol) => {
+        const toleranzOk =
+            Math.abs(lec.start - stud.start) <= tol &&
+            Math.abs(lec.end - stud.end) <= tol;
 
-    // Bei tol = 0 muss auch der Text exakt gleich sein - Sz:1
-    if(tol === 0){
-      const textOk =
-        lec.text.toLowerCase() === stud.text.toLowerCase();
-      return toleranzOk && textOk;
-    }
+        // Bei tol = 0 muss auch der Text exakt gleich sein - Sz:1
+        if (tol === 0) {
+            const textOk =
+                lec.text.toLowerCase() === stud.text.toLowerCase();
+            return toleranzOk && textOk;
+        }
 
-    // Bei tol > 0 interessiert nur die Spanne - Sz:2
-    return toleranzOk;
-  };
-
-  return categories.map(cat => {
-    const missing     = [];
-    const wrong       = [];
-    const usedStud = new Set();   
-
-    //fehlende Markierungen 
-    cat.solutionLec.forEach(lec => {
-      const idx = cat.solutionStud.findIndex(
-        (st, i) => !usedStud.has(i) && isMatch(lec, st, toleranceValue)
-      );
-      if (idx !== -1) {
-        usedStud.add(idx);
-      } else {
-        missing.push(lec);
-      }
-    });
-
-    // --- überflüssige / falsche Markierungen ---
-    cat.solutionStud.forEach((stud, i) => {
-      if (!usedStud.has(i)) wrong.push(stud);
-    });
-
-    return {
-      label   : cat.label,
-      correct : missing.length === 0 && wrong.length === 0,
-      missing,
-      wrong,
-      extra   : cat.extra,
+        // Bei tol > 0 interessiert nur die Spanne - Sz:2
+        return toleranzOk;
     };
-  });
+
+    return categories.map(cat => {
+        const missing = [];
+        const wrong = [];
+        const usedStud = new Set();
+
+        //fehlende Markierungen 
+        cat.solutionLec.forEach(lec => {
+            const idx = cat.solutionStud.findIndex(
+                (st, i) => !usedStud.has(i) && isMatch(lec, st, toleranceValue)
+            );
+            if (idx !== -1) {
+                usedStud.add(idx);
+            } else {
+                missing.push(lec);
+            }
+        });
+
+        // --- überflüssige / falsche Markierungen ---
+        cat.solutionStud.forEach((stud, i) => {
+            if (!usedStud.has(i)) wrong.push(stud);
+        });
+
+        return {
+            label: cat.label,
+            correct: missing.length === 0 && wrong.length === 0,
+            missing,
+            wrong,
+            extra: cat.extra,
+        };
+    });
 }
 
-function printEvaluation(){
+function printEvaluation() {
     const report = evaluate(categories, toleranceValue);
 
     let wrongCounter, missingCounter;
@@ -894,19 +898,19 @@ function printEvaluation(){
     missingCounter = report.reduce((sum, cat) => sum += cat.missing.length, 0);
     tip = report
         .filter(cat => cat.wrong.length || cat.missing.length)
-        .map(cat => cat.extra)                                 
-        .join('; '); 
+        .map(cat => cat.extra)
+        .join('; ');
 
     const missings = document.createElement("P");
     const wrongs = document.createElement("P");
     const tips = document.createElement("p");
     const success = document.createElement("p");
 
-    const textMissings=document.createTextNode(`Fehlende Markierung: ${missingCounter}`);
-    const textWrongs=document.createTextNode(`Falsche Markierung: ${wrongCounter}`);
+    const textMissings = document.createTextNode(`Fehlende Markierung: ${missingCounter}`);
+    const textWrongs = document.createTextNode(`Falsche Markierung: ${wrongCounter}`);
     const textTips = document.createTextNode(`Hinweise: ${tip}`);
     const textSuccess = document.createTextNode("Alles richtig");
-    
+
 
     missings.appendChild(textMissings);
     wrongs.appendChild(textWrongs);
@@ -915,29 +919,29 @@ function printEvaluation(){
 
     const container = document.getElementById("ergebnis");
 
-    if(missingCounter) container.appendChild(missings);
-    if(wrongCounter) container.appendChild(wrongs);
-    if(missingCounter || wrongCounter) container.appendChild(tips);
-    if(!missingCounter && !wrongCounter) container.appendChild(success);
+    if (missingCounter) container.appendChild(missings);
+    if (wrongCounter) container.appendChild(wrongs);
+    if (missingCounter || wrongCounter) container.appendChild(tips);
+    if (!missingCounter && !wrongCounter) container.appendChild(success);
 
 
 }
 
-function filterEvaluation(categories){
+function filterEvaluation(categories) {
     return categories.filter(categories => categories.missing != 0);
 }
 
-function updateTree(){
+function updateTree() {
     let domText = ""
-    if(user === 0){
+    if (user === 0) {
         const editor = tinymce.get("lecTinyMCE");
         domText = editor.getBody();
         document.getElementById("tree").appendChild(domTreeVirtualisation(domText));
 
-    }else{
+    } else {
         domText = document.getElementById("studentExercise");
         document.getElementById("tree").appendChild(domTreeVirtualisation(domText));
-        
+
     }
 }
 
@@ -968,9 +972,9 @@ function updateTree(){
  * 
  * rückgabe des nodes
  */
-function domTreeVirtualisation(node){
+function domTreeVirtualisation(node) {
 
-    if(!node) return;
+    if (!node) return;
 
 
 }
@@ -986,63 +990,151 @@ function renderMarkierungen(user) {
     container.innerHTML = ""; // Reset
 
     categories.forEach((cat) => {
-      const col = document.createElement("div");
-      col.style.border = `1px solid ${cat.color}`;
-      col.style.padding = "8px";
-      col.style.minWidth = "200px";
+        const col = document.createElement("div");
+        col.style.border = `1px solid ${cat.color}`;
+        col.style.padding = "8px";
+        col.style.minWidth = "200px";
+        col.style.maxWidth = "50%"
 
-      const header = document.createElement("h4");
-      header.textContent = cat.label;
-      header.style.color = cat.color;
-      col.appendChild(header);
+        const header = document.createElement("h4");
+        header.textContent = cat.label;
+        header.style.color = cat.color;
+        col.appendChild(header);
 
-      if(user === 0){
-        cat.solutionLec.forEach((mark) => {
-        const markDiv = document.createElement("div");
-        markDiv.style.marginBottom = "8px";
+        if (user === 0) {
+            cat.solutionLec.forEach((mark) => {
+                const markDiv = document.createElement("div");
+                markDiv.style.marginBottom = "8px";
 
-        // Anzeige
-        const textSpan = document.createElement("span");
-        textSpan.textContent = `"${mark.text}"`
-        markDiv.appendChild(textSpan);
+                // Anzeige
+                const textSpan = document.createElement("span");
+                textSpan.textContent = `"${mark.text}"`
+                markDiv.appendChild(textSpan);
 
-        // Input für Punkte
-        const input = document.createElement("input");
-        input.type = "number";
-        input.value = mark.points !== undefined ? mark.points : cat.points;
-        input.style.margin = "0 8px";
-        input.style.width = "50px";
-        input.addEventListener("input", (e) => {
-          mark.points = parseFloat(e.target.value);
-        });
-        markDiv.appendChild(input);
+                // Input für Punkte
+                const input = document.createElement("input");
+                input.type = "number";
+                input.value = mark.points !== undefined ? mark.points : cat.points;
+                input.style.margin = "0 8px";
+                input.style.width = "50px";
+                input.addEventListener("input", (e) => {
+                    mark.points = parseFloat(e.target.value);
+                });
+                markDiv.appendChild(input);
 
-        // Reset Button
-        const resetBtn = document.createElement("button");
-        resetBtn.textContent = "Reset";
-        resetBtn.addEventListener("click", () => {
-          input.value = cat.points;
-          mark.points = cat.points;
-        });
+                // Reset Button
+                const resetBtn = document.createElement("button");
+                resetBtn.textContent = "Reset";
+                resetBtn.addEventListener("click", () => {
+                    input.value = cat.points;
+                    mark.points = cat.points;
+                });
 
-        markDiv.appendChild(resetBtn);
+                markDiv.appendChild(resetBtn);
 
-        col.appendChild(markDiv);
-      });
-      }else{
-        cat.solutionStud.forEach((mark) => {
-        const markDiv = document.createElement("div");
-        markDiv.style.marginBottom = "8px";
+                col.appendChild(markDiv);
+            });
+        } else {
+            cat.solutionStud.forEach((mark) => {
+                const markDiv = document.createElement("div");
+                markDiv.style.marginBottom = "8px";
 
-        // Anzeige
-        const textSpan = document.createElement("span");
-        textSpan.textContent = `"${mark.text}"`
-        markDiv.appendChild(textSpan);
-        col.appendChild(markDiv);
-        })
-      }
-      
+                // Anzeige
+                const textSpan = document.createElement("span");
+                textSpan.textContent = `"${mark.text}"`
 
-      container.appendChild(col);
+                const deleteBtn = document.createElement("button");
+                deleteBtn.textContent = "X";
+                deleteBtn.style.marginLeft = "8px";
+                deleteBtn.style.color = "red";
+                deleteBtn.addEventListener("click", () => {
+                    removeStudentHighlightByStartIndex(mark.start, cat.label);
+                    clearSolutionList(user);
+                    extractSolution(document.getElementById("studentExercise"), user);
+                    renderMarkierungen(user);
+                });
+
+                markDiv.appendChild(textSpan);
+                markDiv.appendChild(deleteBtn);
+                col.appendChild(markDiv);
+            })
+        }
+        container.appendChild(col);
     });
-  }
+}
+
+function removeStudentHighlightByStartIndex(startIndex, label) {
+    const root = document.getElementById("studentExercise");
+    let pos = { count: 0 };
+    let found = false;
+
+    const addVisible = txt => {
+        pos.count += txt.replace(/\[|\]/g, "").length;
+    };
+
+    function traverse(node) {
+        if (found) return;
+
+        if (node.nodeType === Node.TEXT_NODE) {
+            addVisible(node.nodeValue || "");
+            return;
+        }
+
+        if (node.nodeType === Node.ELEMENT_NODE && node.tagName === "SUB") return;
+
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.tagName === "P") pos.count += 1;
+
+            if (node.tagName === "SPAN" && node.dataset.label === label) {
+                const currentStart = pos.count;
+
+                let tempPos = { count: pos.count }; 
+                node.childNodes.forEach(n => {
+                    if (n.nodeType === Node.TEXT_NODE) {
+                        tempPos.count += n.nodeValue.replace(/\[|\]/g, "").length;
+                    } else if (n.nodeType === Node.ELEMENT_NODE && n.tagName !== "SUB") {
+                        const tempText = extractLabeledText(n);
+                        tempPos.count += tempText.replace(/\[|\]/g, "").length;
+                    }
+                });
+
+                if (currentStart === startIndex) {
+                    const fragment = document.createDocumentFragment();
+
+                    node.childNodes.forEach(child => {
+                        if (child.nodeType === Node.TEXT_NODE) {
+                            let t = child.textContent.replace("[", "").replace("]", "");
+                            if (t.trim()) {
+                                fragment.appendChild(document.createTextNode(t));
+                            }
+                        } else if (child.nodeName !== "SUB") {
+                            fragment.appendChild(child.cloneNode(true));
+                        }
+                    });
+
+                    const parent = node.parentNode;
+                    const next = node.nextSibling;
+                    parent.removeChild(node);
+                    parent.insertBefore(fragment, next);
+                    parent.normalize();
+                    found = true;
+                    return;
+                }
+
+                node.childNodes.forEach(traverse);
+                return;
+            }
+
+            node.childNodes.forEach(traverse);
+        }
+    }
+
+    traverse(root);
+}
+
+
+
+
+
+
+
