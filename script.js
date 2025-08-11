@@ -20,6 +20,7 @@ let modi = 0;
 let tolerancePointsValue = 0;
 let incorrectAssignValue = 0;
 let toleranceValue = 0;
+let pointDeduction = false;
 
 
 // Starte die Initialisierung nach DOM-Load
@@ -49,6 +50,7 @@ document.getElementById("goToStudent").addEventListener('click', (e) => {
 
 
     user = 1;
+    pointDeduction = document.getElementById("pntdeduction").checked ? 'true' : 'false';
     document.getElementById('lecturerView').hidden = true;
     document.getElementById('studentView').hidden = false;
     prepStudButtons();
@@ -127,6 +129,7 @@ document.getElementById("dom-virtualisationStud").addEventListener('click', (e) 
     renderMarkierungen(user);
 
 });
+
 
 document.getElementById('evaModis').addEventListener('change', (e) => {
     e.preventDefault();
