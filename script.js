@@ -67,9 +67,7 @@ document.getElementById("studEingabe").addEventListener('click', (e) => {
 
     const body = document.getElementById('studentExercise');
     extractSolution(body, 1);
-    const report = evaluate(categories, toleranceValue)
-    const k = filterEvaluation(report);
-    console.log(k);
+    const report = evaluate(categories)
     console.log(report);
     printEvaluation();
 })
@@ -154,7 +152,7 @@ document.getElementById('evaModis').addEventListener('change', (e) => {
         tolerancePointsInput.type = "number";
         tolerancePointsInput.step = 0.1;
         tolerancePointsInput.min = 0;
-        tolerancePointsInput.max = 0.9;
+        tolerancePointsInput.max = 1;
 
         div.appendChild(tolerancePointsLabel);
         div.appendChild(tolerancePointsInput);
@@ -836,99 +834,6 @@ function extractSolution(root, user) {
     traverseTree(root);
 }
 
-/**
- * Sz1: Bei tolerance = 0 -> exakte Übereinstimmung (inkl. Text)
- * Sz2: Bei tolerance > 0 -> nur Start/End in ±tolerance; Text wird NICHT verglichen
- *
- */
-function evaluate(categories, toleranceValue) {
-    // true, wenn zwei Markierungen als Treffer gelten
-    const isMatch = (lec, stud, tol) => {
-        const toleranzOk =
-            Math.abs(lec.start - stud.start) <= tol &&
-            Math.abs(lec.end - stud.end) <= tol;
-
-        // Bei tol = 0 muss auch der Text exakt gleich sein - Sz:1
-        if (tol === 0) {
-            const textOk =
-                lec.text.toLowerCase() === stud.text.toLowerCase();
-            return toleranzOk && textOk;
-        }
-
-        // Bei tol > 0 interessiert nur die Spanne - Sz:2
-        return toleranzOk;
-    };
-
-    return categories.map(cat => {
-        const missing = [];
-        const wrong = [];
-        const usedStud = new Set();
-
-        //fehlende Markierungen 
-        cat.solutionLec.forEach(lec => {
-            const idx = cat.solutionStud.findIndex(
-                (st, i) => !usedStud.has(i) && isMatch(lec, st, toleranceValue)
-            );
-            if (idx !== -1) {
-                usedStud.add(idx);
-            } else {
-                missing.push(lec);
-            }
-        });
-
-        // --- überflüssige / falsche Markierungen ---
-        cat.solutionStud.forEach((stud, i) => {
-            if (!usedStud.has(i)) wrong.push(stud);
-        });
-
-        return {
-            label: cat.label,
-            correct: missing.length === 0 && wrong.length === 0,
-            missing,
-            wrong,
-            extra: cat.extra,
-        };
-    });
-}
-
-function printEvaluation() {
-    const report = evaluate(categories, toleranceValue);
-
-    let wrongCounter, missingCounter;
-    let tip;
-
-    wrongCounter = report.reduce((sum, cat) => sum += cat.wrong.length, 0);
-    missingCounter = report.reduce((sum, cat) => sum += cat.missing.length, 0);
-    tip = report
-        .filter(cat => cat.wrong.length || cat.missing.length)
-        .map(cat => cat.extra)
-        .join('; ');
-
-    const missings = document.createElement("P");
-    const wrongs = document.createElement("P");
-    const tips = document.createElement("p");
-    const success = document.createElement("p");
-
-    const textMissings = document.createTextNode(`Fehlende Markierung: ${missingCounter}`);
-    const textWrongs = document.createTextNode(`Falsche Markierung: ${wrongCounter}`);
-    const textTips = document.createTextNode(`Hinweise: ${tip}`);
-    const textSuccess = document.createTextNode("Alles richtig");
-
-
-    missings.appendChild(textMissings);
-    wrongs.appendChild(textWrongs);
-    tips.appendChild(textTips);
-    success.appendChild(textSuccess);
-
-    const container = document.getElementById("ergebnis");
-
-    if (missingCounter) container.appendChild(missings);
-    if (wrongCounter) container.appendChild(wrongs);
-    if (missingCounter || wrongCounter) container.appendChild(tips);
-    if (!missingCounter && !wrongCounter) container.appendChild(success);
-
-
-}
 
 function filterEvaluation(categories) {
     return categories.filter(categories => categories.missing != 0);
@@ -975,12 +880,7 @@ function updateTree() {
  * 
  * rückgabe des nodes
  */
-function domTreeVirtualisation(node) {
 
-    if (!node) return;
-
-
-}
 
 //Auflistung aller Markierungen
 
@@ -1135,9 +1035,230 @@ function removeStudentHighlightByStartIndex(startIndex, label) {
     traverse(root);
 }
 
+// --- Helpers: Range/Text Match ---
+function rangesMatch(a, b, tol) {
+  return Math.abs(a.start - b.start) <= tol && Math.abs(a.end - b.end) <= tol;
+}
+function textsEqual(a, b) {
+  return (a.text || "").toLowerCase() === (b.text || "").toLowerCase();
+}
+
+function findBestStudMatchForLecMark(lecMark, catLabel, categories, usedStudIndices) {
+  const tol = toleranceValue || 0;
+  const allowTol = (modi === 1 || modi === 3);
+  const allowMis = (modi === 2 || modi === 3);
+
+  //alle Markierungen
+  const studAll = [];
+  categories.forEach((c, ci) => {
+    c.solutionStud.forEach((st, si) => {
+      if (!usedStudIndices.has(`${ci}:${si}`)) {
+        studAll.push({ label: c.label, mark: st, ci, si });
+      }
+    });
+  });
+
+  // 1) exact (gleiche Kategorie, tol=0, text gleich)
+  for (const s of studAll) {
+    if (s.label === catLabel && rangesMatch(lecMark, s.mark, 0) && textsEqual(lecMark, s.mark)) {
+      return { idxStud: `${s.ci}:${s.si}`, bucket: "exact" };
+    }
+  }
+
+  // 2) tolerance only (gleiche Kategorie, tol>0)
+  if (allowTol && tol > 0) {
+    for (const s of studAll) {
+      if (s.label === catLabel && rangesMatch(lecMark, s.mark, tol)) {
+        return { idxStud: `${s.ci}:${s.si}`, bucket: "tolerance" };
+      }
+    }
+  }
+
+  // 3) misassigned exact (andere Kategorie, tol=0, "relevante Textstelle getroffen")
+  if (allowMis) {
+    for (const s of studAll) {
+      if (s.label !== catLabel && rangesMatch(lecMark, s.mark, 0) && textsEqual(lecMark, s.mark)) {
+        return { idxStud: `${s.ci}:${s.si}`, bucket: "misassigned" };
+      }
+    }
+  }
+
+  // 4) both (andere Kategorie + Toleranz)
+  if (allowMis && allowTol && tol > 0) {
+    for (const s of studAll) {
+      if (s.label !== catLabel && rangesMatch(lecMark, s.mark, tol)) {
+        return { idxStud: `${s.ci}:${s.si}`, bucket: "both" };
+      }
+    }
+  }
+
+  return { idxStud: null, bucket: null };
+}
+
+function evaluate(categories) {
+  const x = Number.isFinite(tolerancePointsValue) ? tolerancePointsValue : 0;
+  const y = Number.isFinite(incorrectAssignValue) ? incorrectAssignValue : 0;
+
+  const reportPerCat = [];
+  let totalEarned = 0;
+  let totalMax = 0;
+  let totalPenalty = 0;
+
+  const usedStud = new Set();
+
+  categories.forEach((cat, ci) => {
+  const MPdefault = num(cat.points);
+  const catMax = cat.solutionLec.reduce((sum, lec) => {
+    const p = num(lec.points) || MPdefault;
+    return sum + p;
+  }, 0);
+
+  const exact = [], tolerance = [], misassigned = [], both = [], missing = [], wrong = [];
+  let earned = 0;
+
+  cat.solutionLec.forEach(lec => {
+    const markPoints = num(lec.points) || MPdefault;
+    const { idxStud, bucket } = findBestStudMatchForLecMark(lec, cat.label, categories, usedStud);
+
+    if (!bucket) { missing.push(lec); return; }
+
+    usedStud.add(idxStud);
+
+    if (bucket === "exact") {
+      exact.push({ lec, idxStud });
+      earned += markPoints;
+    } else if (bucket === "tolerance") {
+      tolerance.push({ lec, idxStud });
+      earned += markPoints * x;
+    } else if (bucket === "misassigned") {
+      misassigned.push({ lec, idxStud });
+      earned += markPoints * y;
+    } else if (bucket === "both") {
+      both.push({ lec, idxStud });
+      earned += markPoints * x * y;
+    }
+  });
+
+  cat.solutionStud.forEach((st, si) => {
+  const key = `${ci}:${si}`;
+  if (!usedStud.has(key)) {
+    wrong.push(st);
+  }
+});
+
+    function overlapsAnyGold(stMark, tol) {
+        return categories.some(c =>
+            c.solutionLec.some(lec => rangesMatch(lec, stMark, tol))
+    );
+}
+    if (pointDeduction === true || pointDeduction === 'true') {
+      wrong.forEach(st => {
+        if(!overlapsAnyGold(st, toleranceValue || 0)){
+      const stPoints = num(st.points) || MPdefault;
+      totalPenalty -= stPoints;
+        }
+    });
+    }
+
+    totalEarned += earned;
+    totalMax += catMax;
+
+    reportPerCat.push({
+    label: cat.label,
+    name: cat.name,
+    color: cat.color,
+    pointsPerMark: MPdefault,
+    counts: { exact: exact.length, tolerance: tolerance.length, misassigned: misassigned.length, both: both.length, missing: missing.length, wrong: wrong.length },
+    lists: { exact, tolerance, misassigned, both, missing, wrong },
+    earned,
+    max: catMax
+    });
+  });
+
+  const grandTotal = Math.max(0, totalEarned + totalPenalty);
+  return {
+    perCategory: reportPerCat,
+    totals: {
+      earned: totalEarned,
+      penalty: totalPenalty,
+      final: grandTotal,
+      max: totalMax
+    }
+  };
+}
+
+function num(n) { return Number.isFinite(n) ? n : 0; }
+
+function printEvaluation() {
+  const report = evaluate(categories);
+
+  const container = document.getElementById("ergebnis");
+  container.innerHTML = "";
+
+  const p1 = document.createElement("p");
+  p1.textContent = `Gesamt: ${report.totals.final.toFixed(2)} / ${report.totals.max}`;
+  container.appendChild(p1);
+
+  if (report.totals.penalty < 0) {
+    const p2 = document.createElement("p");
+    p2.textContent = `Abzüge: ${report.totals.penalty.toFixed(2)}`;
+    container.appendChild(p2);
+  }
+
+  report.perCategory.forEach(cat => {
+    const div = document.createElement("div");
+    div.style.borderLeft = `4px solid ${cat.color}`;
+    div.style.paddingLeft = "8px";
+    div.style.margin = "6px 0";
+
+    const h = document.createElement("strong");
+    h.textContent = `${cat.name} (${cat.label}) — ${cat.earned.toFixed(2)} / ${cat.max}`;
+    div.appendChild(h);
+
+    const small = document.createElement("div");
+    const c = cat.counts;
+    small.textContent = `✓ exakt: ${c.exact}, ± tol: ${c.tolerance}, falsche Kat.: ${c.misassigned}, beides: ${c.both}, fehlend: ${c.missing}, falsch: ${c.wrong}`;
+    div.appendChild(small);
+
+    container.appendChild(div);
+  });
+}
+
+function printEvaluation1() {
+    const report = evaluate(categories, toleranceValue);
+
+    let wrongCounter, missingCounter;
+    let tip;
+
+    wrongCounter = report.reduce((sum, cat) => sum += cat.wrong.length, 0);
+    missingCounter = report.reduce((sum, cat) => sum += cat.missing.length, 0);
+    tip = report
+        .filter(cat => cat.wrong.length || cat.missing.length)
+        .map(cat => cat.extra)
+        .join('; ');
+
+    const missings = document.createElement("P");
+    const wrongs = document.createElement("P");
+    const tips = document.createElement("p");
+    const success = document.createElement("p");
+
+    const textMissings = document.createTextNode(`Fehlende Markierung: ${missingCounter}`);
+    const textWrongs = document.createTextNode(`Falsche Markierung: ${wrongCounter}`);
+    const textTips = document.createTextNode(`Hinweise: ${tip}`);
+    const textSuccess = document.createTextNode("Alles richtig");
 
 
+    missings.appendChild(textMissings);
+    wrongs.appendChild(textWrongs);
+    tips.appendChild(textTips);
+    success.appendChild(textSuccess);
+
+    const container = document.getElementById("ergebnis");
+
+    if (missingCounter) container.appendChild(missings);
+    if (wrongCounter) container.appendChild(wrongs);
+    if (missingCounter || wrongCounter) container.appendChild(tips);
+    if (!missingCounter && !wrongCounter) container.appendChild(success);
 
 
-
-
+}
