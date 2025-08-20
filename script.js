@@ -991,7 +991,7 @@ function removeStudentHighlightByStartIndex(startIndex, label) {
             if (node.tagName === "SPAN" && node.dataset.label === label) {
                 const currentStart = pos.count;
 
-                let tempPos = { count: pos.count }; 
+                let tempPos = { count: pos.count };
                 node.childNodes.forEach(n => {
                     if (n.nodeType === Node.TEXT_NODE) {
                         tempPos.count += n.nodeValue.replace(/\[|\]/g, "").length;
@@ -1037,191 +1037,205 @@ function removeStudentHighlightByStartIndex(startIndex, label) {
 
 // --- Helpers: Range/Text Match ---
 function rangesMatch(a, b, tol) {
-  return Math.abs(a.start - b.start) <= tol && Math.abs(a.end - b.end) <= tol;
+    return Math.abs(a.start - b.start) <= tol && Math.abs(a.end - b.end) <= tol;
 }
 function textsEqual(a, b) {
-  return (a.text || "").toLowerCase() === (b.text || "").toLowerCase();
+    return (a.text || "").toLowerCase() === (b.text || "").toLowerCase();
 }
 
 function findBestStudMatchForLecMark(lecMark, catLabel, categories, usedStudIndices) {
-  const tol = toleranceValue || 0;
-  const allowTol = (modi === 1 || modi === 3);
-  const allowMis = (modi === 2 || modi === 3);
+    const tol = toleranceValue || 0;
+    const allowTol = (modi === 1 || modi === 3);
+    const allowMis = (modi === 2 || modi === 3);
 
-  //alle Markierungen
-  const studAll = [];
-  categories.forEach((c, ci) => {
-    c.solutionStud.forEach((st, si) => {
-      if (!usedStudIndices.has(`${ci}:${si}`)) {
-        studAll.push({ label: c.label, mark: st, ci, si });
-      }
+    //alle Markierungen
+    const studAll = [];
+    categories.forEach((c, ci) => {
+        c.solutionStud.forEach((st, si) => {
+            if (!usedStudIndices.has(`${ci}:${si}`)) {
+                studAll.push({ label: c.label, mark: st, ci, si });
+            }
+        });
     });
-  });
 
-  // 1) exact (gleiche Kategorie, tol=0, text gleich)
-  for (const s of studAll) {
-    if (s.label === catLabel && rangesMatch(lecMark, s.mark, 0) && textsEqual(lecMark, s.mark)) {
-      return { idxStud: `${s.ci}:${s.si}`, bucket: "exact" };
-    }
-  }
-
-  // 2) tolerance only (gleiche Kategorie, tol>0)
-  if (allowTol && tol > 0) {
+    // 1) exact (gleiche Kategorie, tol=0, text gleich)
     for (const s of studAll) {
-      if (s.label === catLabel && rangesMatch(lecMark, s.mark, tol)) {
-        return { idxStud: `${s.ci}:${s.si}`, bucket: "tolerance" };
-      }
+        if (s.label === catLabel && rangesMatch(lecMark, s.mark, 0) && textsEqual(lecMark, s.mark)) {
+            return { idxStud: `${s.ci}:${s.si}`, bucket: "exact" };
+        }
     }
-  }
 
-  // 3) misassigned exact (andere Kategorie, tol=0, "relevante Textstelle getroffen")
-  if (allowMis) {
-    for (const s of studAll) {
-      if (s.label !== catLabel && rangesMatch(lecMark, s.mark, 0) && textsEqual(lecMark, s.mark)) {
-        return { idxStud: `${s.ci}:${s.si}`, bucket: "misassigned" };
-      }
+    // 2) tolerance only (gleiche Kategorie, tol>0)
+    if (allowTol && tol > 0) {
+        for (const s of studAll) {
+            if (s.label === catLabel && rangesMatch(lecMark, s.mark, tol)) {
+                return { idxStud: `${s.ci}:${s.si}`, bucket: "tolerance" };
+            }
+        }
     }
-  }
 
-  // 4) both (andere Kategorie + Toleranz)
-  if (allowMis && allowTol && tol > 0) {
-    for (const s of studAll) {
-      if (s.label !== catLabel && rangesMatch(lecMark, s.mark, tol)) {
-        return { idxStud: `${s.ci}:${s.si}`, bucket: "both" };
-      }
+    // 3) misassigned exact (andere Kategorie, tol=0, "relevante Textstelle getroffen")
+    if (allowMis) {
+        for (const s of studAll) {
+            if (s.label !== catLabel && rangesMatch(lecMark, s.mark, 0) && textsEqual(lecMark, s.mark)) {
+                return { idxStud: `${s.ci}:${s.si}`, bucket: "misassigned" };
+            }
+        }
     }
-  }
 
-  return { idxStud: null, bucket: null };
+    // 4) both (andere Kategorie + Toleranz)
+    if (allowMis && allowTol && tol > 0) {
+        for (const s of studAll) {
+            if (s.label !== catLabel && rangesMatch(lecMark, s.mark, tol)) {
+                return { idxStud: `${s.ci}:${s.si}`, bucket: "both" };
+            }
+        }
+    }
+
+    return { idxStud: null, bucket: null };
 }
 
 function evaluate(categories) {
-  const x = Number.isFinite(tolerancePointsValue) ? tolerancePointsValue : 0;
-  const y = Number.isFinite(incorrectAssignValue) ? incorrectAssignValue : 0;
+    const x = Number.isFinite(tolerancePointsValue) ? tolerancePointsValue : 0;
+    const y = Number.isFinite(incorrectAssignValue) ? incorrectAssignValue : 0;
 
-  const reportPerCat = [];
-  let totalEarned = 0;
-  let totalMax = 0;
-  let totalPenalty = 0;
+    const reportPerCat = [];
+    let totalEarned = 0;
+    let totalMax = 0;
+    let totalPenalty = 0;
 
-  const usedStud = new Set();
+    const usedStud = new Set();
 
-  categories.forEach((cat, ci) => {
-  const MPdefault = num(cat.points);
-  const catMax = cat.solutionLec.reduce((sum, lec) => {
-    const p = num(lec.points) || MPdefault;
-    return sum + p;
-  }, 0);
+    categories.forEach((cat, ci) => {
+        const MPdefault = num(cat.points);
+        const catMax = cat.solutionLec.reduce((sum, lec) => {
+            const p = num(lec.points) || MPdefault;
+            return sum + p;
+        }, 0);
 
-  const exact = [], tolerance = [], misassigned = [], both = [], missing = [], wrong = [];
-  let earned = 0;
+        const exact = [], tolerance = [], misassigned = [], both = [], missing = [], wrong = [];
+        let earned = 0;
 
-  cat.solutionLec.forEach(lec => {
-    const markPoints = num(lec.points) || MPdefault;
-    const { idxStud, bucket } = findBestStudMatchForLecMark(lec, cat.label, categories, usedStud);
+        cat.solutionLec.forEach(lec => {
+            const markPoints = num(lec.points) || MPdefault;
+            const { idxStud, bucket } = findBestStudMatchForLecMark(lec, cat.label, categories, usedStud);
 
-    if (!bucket) { missing.push(lec); return; }
+            if (!bucket) { missing.push(lec); return; }
 
-    usedStud.add(idxStud);
+            usedStud.add(idxStud);
 
-    if (bucket === "exact") {
-      exact.push({ lec, idxStud });
-      earned += markPoints;
-    } else if (bucket === "tolerance") {
-      tolerance.push({ lec, idxStud });
-      earned += markPoints * x;
-    } else if (bucket === "misassigned") {
-      misassigned.push({ lec, idxStud });
-      earned += markPoints * y;
-    } else if (bucket === "both") {
-      both.push({ lec, idxStud });
-      earned += markPoints * x * y;
-    }
-  });
+            if (bucket === "exact") {
+                exact.push({ lec, idxStud });
+                earned += markPoints;
+            } else if (bucket === "tolerance") {
+                tolerance.push({ lec, idxStud });
+                earned += markPoints * x;
+            } else if (bucket === "misassigned") {
+                misassigned.push({ lec, idxStud });
+                earned += markPoints * y;
+            } else if (bucket === "both") {
+                both.push({ lec, idxStud });
+                earned += markPoints * x * y;
+            }
+        });
 
-  cat.solutionStud.forEach((st, si) => {
-  const key = `${ci}:${si}`;
-  if (!usedStud.has(key)) {
-    wrong.push(st);
-  }
-});
+        cat.solutionStud.forEach((st, si) => {
+            const key = `${ci}:${si}`;
+            if (!usedStud.has(key)) {
+                wrong.push(st);
+            }
+        });
 
-    function overlapsAnyGold(stMark, tol) {
-        return categories.some(c =>
-            c.solutionLec.some(lec => rangesMatch(lec, stMark, tol))
-    );
-}
-    if (pointDeduction === true || pointDeduction === 'true') {
-      wrong.forEach(st => {
-        if(!overlapsAnyGold(st, toleranceValue || 0)){
-      const stPoints = num(st.points) || MPdefault;
-      totalPenalty -= stPoints;
+        function overlapsAnyGold(stMark, tol) {
+            return categories.some(c =>
+                c.solutionLec.some(lec => rangesMatch(lec, stMark, tol))
+            );
         }
+        if (pointDeduction === true || pointDeduction === 'true') {
+            wrong.forEach(st => {
+                if (!overlapsAnyGold(st, toleranceValue || 0)) {
+                    const stPoints = num(st.points) || MPdefault;
+                    totalPenalty -= stPoints;
+                }
+            });
+        }
+
+        totalEarned += earned;
+        totalMax += catMax;
+
+        reportPerCat.push({
+            label: cat.label,
+            name: cat.name,
+            color: cat.color,
+            extra: cat.extra,
+            pointsPerMark: MPdefault,
+            counts: { exact: exact.length, tolerance: tolerance.length, misassigned: misassigned.length, both: both.length, missing: missing.length, wrong: wrong.length },
+            lists: { exact, tolerance, misassigned, both, missing, wrong },
+            earned,
+            max: catMax
+        });
     });
-    }
 
-    totalEarned += earned;
-    totalMax += catMax;
-
-    reportPerCat.push({
-    label: cat.label,
-    name: cat.name,
-    color: cat.color,
-    pointsPerMark: MPdefault,
-    counts: { exact: exact.length, tolerance: tolerance.length, misassigned: misassigned.length, both: both.length, missing: missing.length, wrong: wrong.length },
-    lists: { exact, tolerance, misassigned, both, missing, wrong },
-    earned,
-    max: catMax
-    });
-  });
-
-  const grandTotal = Math.max(0, totalEarned + totalPenalty);
-  return {
-    perCategory: reportPerCat,
-    totals: {
-      earned: totalEarned,
-      penalty: totalPenalty,
-      final: grandTotal,
-      max: totalMax
-    }
-  };
+    const grandTotal = Math.max(0, totalEarned + totalPenalty);
+    return {
+        perCategory: reportPerCat,
+        totals: {
+            earned: totalEarned,
+            penalty: totalPenalty,
+            final: grandTotal,
+            max: totalMax
+        }
+    };
 }
 
 function num(n) { return Number.isFinite(n) ? n : 0; }
 
 function printEvaluation() {
-  const report = evaluate(categories);
+    const report = evaluate(categories);
 
-  const container = document.getElementById("ergebnis");
-  container.innerHTML = "";
+    const container = document.getElementById("ergebnis");
+    container.innerHTML = "";
 
-  const p1 = document.createElement("p");
-  p1.textContent = `Gesamt: ${report.totals.final.toFixed(2)} / ${report.totals.max}`;
-  container.appendChild(p1);
+    const p1 = document.createElement("p");
+    p1.textContent = `Ergebnis: ${report.totals.final.toFixed(2)} / ${report.totals.max.toFixed(2)}`;
+    container.appendChild(p1);
 
-  if (report.totals.penalty < 0) {
-    const p2 = document.createElement("p");
-    p2.textContent = `Abzüge: ${report.totals.penalty.toFixed(2)}`;
-    container.appendChild(p2);
-  }
+    if (report.totals.penalty < 0) {
+        const p2 = document.createElement("p");
+        p2.textContent = `Abzüge: ${report.totals.penalty.toFixed(2)}`;
+        container.appendChild(p2);
+    }
 
-  report.perCategory.forEach(cat => {
-    const div = document.createElement("div");
-    div.style.borderLeft = `4px solid ${cat.color}`;
-    div.style.paddingLeft = "8px";
-    div.style.margin = "6px 0";
 
-    const h = document.createElement("strong");
-    h.textContent = `${cat.name} (${cat.label}) — ${cat.earned.toFixed(2)} / ${cat.max}`;
-    div.appendChild(h);
+    
+    report.perCategory.forEach(cat => {
+        if(cat.counts.wrong > 0 || cat.counts.tolerance > 0 || cat.counts.misassigned > 0 || cat.counts.missing > 0 || cat.counts.both > 0){
 
-    const small = document.createElement("div");
-    const c = cat.counts;
-    small.textContent = `✓ exakt: ${c.exact}, ± tol: ${c.tolerance}, falsche Kat.: ${c.misassigned}, beides: ${c.both}, fehlend: ${c.missing}, falsch: ${c.wrong}`;
-    div.appendChild(small);
+            const div = document.createElement("div");
+            div.style.borderLeft = `4px solid ${cat.color}`;
+            div.style.paddingLeft = "8px";
+            div.style.margin = "6px 0";
 
-    container.appendChild(div);
-  });
+            const pHint = document.createElement("p");
+            pHint.textContent = `Hinweis zu ${cat.name}: ${cat.extra}`;
+            div.appendChild(pHint);
+
+            container.appendChild(div);
+        }
+
+
+        //const h = document.createElement("strong");
+        //h.textContent = `${cat.name} (${cat.label}) — ${cat.earned.toFixed(2)} / ${cat.max.toFixed(2)}`;
+        //div.appendChild(h);
+
+        //const small = document.createElement("div");
+        //const c = cat.counts;
+        //small.textContent = `✓ exakt: ${c.exact}, ± tol: ${c.tolerance}, falsche Kat.: ${c.misassigned}, beides: ${c.both}, fehlend: ${c.missing}, falsch: ${c.wrong}`;
+        //div.appendChild(small);
+
+        
+    });
+    
 }
 
 function printEvaluation1() {
